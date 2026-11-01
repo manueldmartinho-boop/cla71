@@ -1,4 +1,4 @@
-# Clã 71 · Agrupamento 1008
+# Clã 71 / Agrupamento 1008
 
 Aplicação em **Next.js 16, React e TypeScript**, com autenticação Supabase e base de dados PostgreSQL partilhada. Preparada para a Vercel.
 
@@ -111,10 +111,12 @@ O quadro de progresso agrupa os nomes pela etapa atual e permite filtrar a tabel
 
 Referência: [Manual do Dirigente — Sistema de Progresso](https://vianadocastelo.escutismo.pt/Documentos/formacao/Manual_do_Dirigente_Sistema_de_Progresso.pdf), páginas 7–15, e cartaz CNE dos OEF.
 
-A etapa é calculada: Caminho até registar o compromisso na IV secção; Comunidade após o compromisso; Serviço com pelo menos 2 OEF validados em cada uma das seis áreas; Partida com pelo menos 5 em cada área. Só o estado Tem conta como validado. Objetivos adicionais, oportunidades concluídas, propostas e etapas manuais antigas não alteram estes cálculos.
+A etapa é calculada: Serviço com pelo menos 2 OEF validados em cada uma das seis áreas; Partida com pelo menos 5 em cada área. Sem estes limiares, Comunidade quando há compromisso registado ou OEF já validados; Caminho nos restantes casos. A ausência de datas históricas não sobrepõe progresso validado. Só o estado Tem conta como validado. Objetivos adicionais, oportunidades concluídas, propostas e etapas manuais antigas não alteram estes cálculos.
 
 A hierarquia apresenta as seis áreas, três trilhos por área e os OEF. Na ficha, cada objetivo pode integrar a negociação de Comunidade, Serviço ou Partida; o quadro da negociação mostra os escolhidos e validados por área, com referência de 2–3 por etapa. Propostas incluem oportunidades educativas, prazos e evidências. Objetivos reconhecidos na negociação podem ser validados diretamente.
 
 Completar oportunidades não valida objetivos automaticamente. A cerimónia de Partida fica num registo separado com data e fundamentação do Clã; não é atribuída por atingir o limiar da etapa. Todos os 42 OEF validados assinalam a conclusão do percurso para reconhecimento de mérito, sem simular a cerimónia.
 
 Os logs de progresso incluem compromisso, reconhecimento e etapa calculada antes/depois. Dados antigos, observações e pendências são mantidos; a aplicação não inventa datas de compromisso a partir das antigas etapas manuais.
+
+A edição de objetivos abre numa janela modal centrada, com scroll interno, suporte a Escape e mensagens de validação visíveis dentro da janela. Os separadores de ponto médio foram retirados da interface.

@@ -8,20 +8,20 @@ export type Loan = { id: string; materialId: string; person: string; quantity: n
 export type Data = { version: 1; materials: Material[]; movements: Movement[]; loans: Loan[]; treasury?: Treasury; tribes?:Tribe[]; progress?:Progress };
 export const emptyData: Data = { version: 1, materials: [], movements: [], loans: [] };
 export const demoData: Data = { version: 1, treasury:demoTreasury, materials: [
- {id:'m1',name:'Tenda de patrulha · 6 pessoas',category:'Campismo',total:4,borrowed:1,condition:'Bom',location:'Sede · Armário A'},
- {id:'m2',name:'Fogão de campo',category:'Cozinha',total:3,borrowed:0,condition:'Bom',location:'Sede · Armário B'},
- {id:'m3',name:'Mochila de primeiros socorros',category:'Saúde',total:2,borrowed:0,condition:'Rever',location:'Sede · Armário A'},
- {id:'m4',name:'Lanterna de campismo',category:'Campismo',total:8,borrowed:2,condition:'Bom',location:'Sede · Armário C'},
- {id:'m5',name:'Corda de sisal · 20 m',category:'Pioneirismo',total:6,borrowed:0,condition:'Bom',location:'Sede · Armário C'},
- {id:'m6',name:'Panela de campo · 10 L',category:'Cozinha',total:2,borrowed:0,condition:'Reparar',location:'Sede · Armário B'}
+ {id:'m1',name:'Tenda de patrulha / 6 pessoas',category:'Campismo',total:4,borrowed:1,condition:'Bom',location:'Sede / Armário A'},
+ {id:'m2',name:'Fogão de campo',category:'Cozinha',total:3,borrowed:0,condition:'Bom',location:'Sede / Armário B'},
+ {id:'m3',name:'Mochila de primeiros socorros',category:'Saúde',total:2,borrowed:0,condition:'Rever',location:'Sede / Armário A'},
+ {id:'m4',name:'Lanterna de campismo',category:'Campismo',total:8,borrowed:2,condition:'Bom',location:'Sede / Armário C'},
+ {id:'m5',name:'Corda de sisal / 20 m',category:'Pioneirismo',total:6,borrowed:0,condition:'Bom',location:'Sede / Armário C'},
+ {id:'m6',name:'Panela de campo / 10 L',category:'Cozinha',total:2,borrowed:0,condition:'Reparar',location:'Sede / Armário B'}
  ], movements: [
  {id:'t1',description:'Fundo inicial do clã',category:'Outros',type:'income',amount:650,date:'2026-09-01'},
  {id:'t2',description:'Quotas de setembro',category:'Quotas',type:'income',amount:180,date:'2026-09-15'},
  {id:'t3',description:'Material de pioneirismo',category:'Material',type:'expense',amount:87.50,date:'2026-09-20'},
  {id:'t4',description:'Venda de bolos',category:'Angariações',type:'income',amount:245,date:'2026-10-05'},
- {id:'t5',description:'Alimentação · acampamento',category:'Atividades',type:'expense',amount:132.80,date:'2026-10-12'},
+ {id:'t5',description:'Alimentação / acampamento',category:'Atividades',type:'expense',amount:132.80,date:'2026-10-12'},
  {id:'t6',description:'Quotas de outubro',category:'Quotas',type:'income',amount:180,date:'2026-10-15'},
- {id:'t7',description:'Transporte · caminhada',category:'Atividades',type:'expense',amount:65,date:'2026-10-24'}
+ {id:'t7',description:'Transporte / caminhada',category:'Atividades',type:'expense',amount:65,date:'2026-10-24'}
  ], loans: [
  {id:'l1',materialId:'m1',person:'Equipa Horizonte',quantity:1,due:'2026-11-08',returned:false},
  {id:'l2',materialId:'m4',person:'Equipa Caminho',quantity:2,due:'2026-11-15',returned:false}

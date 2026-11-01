@@ -31,11 +31,12 @@ export function progressSummary(p:Progress,personId:string){
  const done=new Set(p.records.filter(r=>r.personId===personId&&r.status==='completed').map(r=>r.goalId));
  const counts=areas.map(a=>({area:a.id,completed:defaultCatalog.filter(g=>g.area===a.id&&done.has(g.id)).length,total:defaultCatalog.filter(g=>g.area===a.id).length}));
  const milestone=p.milestones?.find(m=>m.personId===personId);
- const stage:Stage=!milestone?.commitmentDate?'caminho':counts.every(c=>c.completed>=5)?'partida':counts.every(c=>c.completed>=2)?'servico':'comunidade';
+ const total=counts.reduce((sum,c)=>sum+c.completed,0);
+ const stage:Stage=counts.every(c=>c.completed>=5)?'partida':counts.every(c=>c.completed>=2)?'servico':milestone?.commitmentDate||total>0?'comunidade':'caminho';
  return {stage,counts,total:counts.reduce((s,c)=>s+c.completed,0),merit:counts.every(c=>c.completed===c.total),milestone};
 }
 export function negotiatedGoals(p:Progress,personId:string,stage:Stage,area:Area){return p.records.filter(r=>r.personId===personId&&(r.stage==='caminho'?'comunidade':r.stage)===stage&&r.status!=='not_started'&&defaultCatalog.some(g=>g.id===r.goalId&&g.area===area));}
-export const progressSources=[{title:'Programa Educativo do CNE',url:'https://escutismo.pt/programa-educativo/'},{title:'Objetivos educativos · IV secção (CNE)',url:'https://saintalphonse.lgs.lu/wp-content/uploads/2023/02/CAMINHEIROS-Cartaz-FACEIS_compressed.pdf'},{title:'Etapas e percurso dos Caminheiros',url:'https://1351.escutismo.pt/caminheiros-sistema-de-progresso/'}];
+export const progressSources=[{title:'Programa Educativo do CNE',url:'https://escutismo.pt/programa-educativo/'},{title:'Objetivos educativos / IV secção (CNE)',url:'https://saintalphonse.lgs.lu/wp-content/uploads/2023/02/CAMINHEIROS-Cartaz-FACEIS_compressed.pdf'},{title:'Etapas e percurso dos Caminheiros',url:'https://1351.escutismo.pt/caminheiros-sistema-de-progresso/'}];
 export function validProgress(value:unknown,personIds:string[]):value is Progress{
  if(!value||typeof value!=='object')return false;const p=value as Progress;
  if(!Array.isArray(p.catalog)||!Array.isArray(p.records)||!Array.isArray(p.stages))return false;

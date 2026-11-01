@@ -8,7 +8,7 @@ export const emptyTreasury: Treasury = { types: [], typologies: [], people: [], 
 export const demoTreasury: Treasury = {
  types:[{id:'individual',name:'Individual'}],
  typologies:[{id:'angariacoes',typeId:'individual',name:'Angariações',priority:1,spendable:true},{id:'poupanca',typeId:'individual',name:'Poupança',priority:2,spendable:true},{id:'reservado',typeId:'individual',name:'Fundo reservado',priority:0,spendable:false}],
- people:[{id:'ana',name:'Ana · exemplo',active:true},{id:'joao',name:'João · exemplo',active:true},{id:'rita',name:'Rita · exemplo',active:true}],
+ people:[{id:'ana',name:'Ana / exemplo',active:true},{id:'joao',name:'João / exemplo',active:true},{id:'rita',name:'Rita / exemplo',active:true}],
  entries:[{id:'e1',personId:'ana',typologyId:'angariacoes',cents:150,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e2',personId:'ana',typologyId:'poupanca',cents:500,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e3',personId:'joao',typologyId:'angariacoes',cents:800,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e4',personId:'rita',typologyId:'angariacoes',cents:75,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e5',personId:'rita',typologyId:'reservado',cents:2000,description:'Saldo de exemplo',date:'2026-11-01',batchId:null}]
 };
 export const balance = (t: Treasury, personId: string, typologyId: string) => t.entries.filter(e => e.personId === personId && e.typologyId === typologyId).reduce((s,e) => s + e.cents, 0);

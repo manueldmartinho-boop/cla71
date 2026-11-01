@@ -35,7 +35,9 @@ assert.equal(progressSummary(withCount(4),'p').stage,'servico');
 assert.equal(progressSummary(withCount(5),'p').stage,'partida');
 assert.equal(progressSummary(withCount(8),'p').merit,true);
 assert.equal(progressSummary(withCount(5),'p').merit,false);
-assert.equal(progressSummary({...withCount(8),milestones:[]},'p').stage,'caminho');
+assert.equal(progressSummary({...withCount(8),milestones:[]},'p').stage,'partida');
+assert.equal(progressSummary({...withCount(2),milestones:[]},'p').stage,'servico');
+assert.equal(progressSummary({...withCount(1),milestones:[]},'p').stage,'comunidade');
 for(const area of ['F','A','C','E','I','S']){
  const d=withCount(8);d.records=d.records.filter(r=>!r.goalId.startsWith(area)||r.goalId===area+'1');
  assert.equal(progressSummary(d,'p').stage,'comunidade','Exige todas as áreas');

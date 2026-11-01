@@ -20,6 +20,7 @@ begin
   changed:=jsonb_set(base,'{progress,records}',records);
   expected:=case when n>=5 then 'partida' when n>=2 then 'servico' else 'comunidade' end;
   if public.clan_progress_stage(changed->'progress','qa')<>expected then raise exception 'Wrong threshold %',n;end if;
+  if public.clan_progress_stage((changed->'progress')-'milestones','qa')<>(case when n=0 then 'caminho' else expected end) then raise exception 'Historical dates override OEF %',n;end if;
   perform public.save_clan_state(changed,r);r:=r+1;base:=changed;
  end loop;
  if not exists(select 1 from public.clan_progress_logs where person_id='qa' and next_value->'stage'->>'stage'='partida' and actor_user_id=actor) then raise exception 'Missing automatic stage audit';end if;
