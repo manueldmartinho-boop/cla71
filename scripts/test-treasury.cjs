@@ -1,0 +1,24 @@
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const ts = require('typescript');
+const Module = require('node:module');
+function load(path) { const m = new Module(path, module); m.filename = path; m.paths = module.paths; m._compile(ts.transpileModule(fs.readFileSync(path,'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,path); return m.exports; }
+const {allocate,balance,validateTreasury} = load(require('node:path').resolve('lib/treasury.ts'));
+const t={types:[{id:'g',name:'Individual'}],typologies:[{id:'a',typeId:'g',name:'Angariações',priority:1,spendable:true},{id:'s',typeId:'g',name:'Poupança',priority:2,spendable:true},{id:'p',typeId:'g',name:'Protegido',priority:0,spendable:false}],people:[{id:'ana',name:'Ana',active:true},{id:'rui',name:'Rui',active:true},{id:'old',name:'Antigo',active:false}],entries:[]};
+const credit=(id,personId,typologyId,cents)=>({id,personId,typologyId,cents,description:'Saldo de teste',date:'2026-11-01',batchId:null});
+t.entries=[credit('1','ana','a',150),credit('2','ana','s',500),credit('3','rui','a',75),credit('4','rui','p',10000)];
+assert.ok(validateTreasury(t));
+let rows=allocate(t,['ana','rui','old'],200);
+assert.equal(rows.length,2,'Exclui pessoas arquivadas');
+assert.deepEqual(rows[0].sources.map(s=>[s.typology.id,s.cents]),[['a',150],['s',50]],'Divide 2 euros entre tipologias por prioridade');
+assert.equal(rows[0].shortfall,0);
+assert.equal(rows[1].shortfall,125,'Proteção impede usar saldo reservado');
+assert.ok(!rows[1].sources.some(s=>s.typology.id==='p'));
+assert.equal(balance(t,'ana','a'),150,'Simular não altera os saldos');
+const next=structuredClone(t);next.entries.push({...credit('debit','ana','a',-151),batchId:'batch'});
+assert.equal(validateTreasury(next),false,'Impede saldo negativo');
+assert.throws(()=>allocate(t,['ana'],0));
+assert.throws(()=>allocate(t,['ana'],2.5));
+const duplicate=structuredClone(t);duplicate.people.push(duplicate.people[0]);assert.equal(validateTreasury(duplicate),false);
+const validDebit=structuredClone(t);validDebit.entries.push({...credit('d1','ana','a',-150),batchId:'batch'},{...credit('d2','ana','s',-50),batchId:'batch'});assert.ok(validateTreasury(validDebit));assert.equal(balance(validDebit,'ana','a'),0);assert.equal(balance(validDebit,'ana','s'),450);
+console.log('14 verificações da tesouraria: OK');

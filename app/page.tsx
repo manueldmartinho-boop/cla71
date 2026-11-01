@@ -1,115 +1,111 @@
 'use client';
-
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowDownLeft, ArrowUpRight, ArrowRight, Backpack, Box, Check, Compass, Download, FileText, LayoutDashboard, Menu, Package, Plus, Search, Settings, Tent, Trash2, Upload, Wallet, X, Handshake, CircleHelp, ShieldCheck, TrendingUp, AlertCircle } from 'lucide-react';
-import { demoData, emptyData, isData, type Data, type Material } from '@/lib/data';
+import type { Session } from '@supabase/supabase-js';
+import { Compass, LockKeyhole, LogOut, RefreshCw, ShieldCheck } from 'lucide-react';
+import Dashboard from '@/components/dashboard';
+import { getSupabase } from '@/lib/supabase';
+import { isData, type Data } from '@/lib/data';
 
-type View = 'dashboard' | 'materials' | 'finance' | 'loans' | 'settings';
-type Modal = 'material' | 'income' | 'expense' | 'loan' | null;
-const money = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
-const dateLabel = (v: string) => new Date(v+'T12:00:00').toLocaleDateString('pt-PT', {day:'2-digit',month:'short'});
-const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
-const titles: Record<View,string> = {dashboard:'Visão geral',materials:'Material',finance:'Finanças',loans:'Empréstimos',settings:'Definições'};
-const nav = [{id:'dashboard',label:'Visão geral',icon:LayoutDashboard},{id:'materials',label:'Material',icon:Backpack},{id:'finance',label:'Finanças',icon:Wallet},{id:'loans',label:'Empréstimos',icon:Handshake}] as const;
-const KEY = 'cla71-data-v1';
-
+type Snapshot = { payload: Data; revision: number };
 export default function Home() {
- const [view,setView]=useState<View>('dashboard');
- const [data,setData]=useState<Data>(emptyData);
- const [ready,setReady]=useState(false);
- const [demo,setDemo]=useState(false);
- const [modal,setModal]=useState<Modal>(null);
- const [edit,setEdit]=useState<Material|null>(null);
- const [query,setQuery]=useState('');
- const [filter,setFilter]=useState('Todas');
- const [mobile,setMobile]=useState(false);
- const [notice,setNotice]=useState('');
- const [formError,setFormError]=useState('');
- const [confirm,setConfirm]=useState<{text:string;run:()=>void}|null>(null);
- const [period,setPeriod]=useState('6');
- const upload=useRef<HTMLInputElement>(null);
- const dialogRef=useRef<HTMLDialogElement>(null);
- const confirmRef=useRef<HTMLDialogElement>(null);
- useEffect(()=>{try {const saved=localStorage.getItem(KEY); if(saved){const parsed=JSON.parse(saved);if(!isData(parsed))throw Error();setData(parsed);}else{setData(structuredClone(demoData));setDemo(true);}}catch{setNotice('Não foi possível ler os dados guardados. Importa uma cópia de segurança nas definições.');}setReady(true);},[]);
- useEffect(()=>{if(!ready||demo)return;try{localStorage.setItem(KEY,JSON.stringify(data));}catch{setNotice('Não foi possível guardar. Exporta uma cópia de segurança.');}},[data,ready,demo]);
- useEffect(()=>{if(modal)dialogRef.current?.showModal();else dialogRef.current?.close();},[modal]);
- useEffect(()=>{if(confirm)confirmRef.current?.showModal();else confirmRef.current?.close();},[confirm]);
- useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNotice(''),6000);return()=>clearTimeout(t);},[notice]);
- const go=(v:View)=>{setView(v);setQuery('');setFilter('Todas');setMobile(false);};
- const open=(m:Modal, item:Material|null=null)=>{setEdit(item);setFormError('');setModal(m);};
- const income=data.movements.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
- const expense=data.movements.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
- const activeLoans=data.loans.filter(l=>!l.returned);
- const units=data.materials.reduce((s,m)=>s+m.total,0);
- const borrowed=data.materials.reduce((s,m)=>s+m.borrowed,0);
- const needsCare=data.materials.filter(m=>m.condition!=='Bom');
- const transactions=[...data.movements].sort((a,b)=>b.date.localeCompare(a.date));
- const materials=data.materials.filter(m=>`${m.name} ${m.location} ${m.category}`.toLowerCase().includes(query.toLowerCase())&&(filter==='Todas'||m.category===filter));
- const filteredMovements=transactions.filter(t=>`${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase())&&(filter==='Todas'||t.type===filter));
- const update=(next:Data)=>{setData(next);};
- const askDelete=(id:string,kind:'material'|'movement')=>setConfirm({text:kind==='material'?'Eliminar este material do inventário? O histórico de empréstimos deste material também será eliminado.':'Eliminar este movimento? O saldo será recalculado.',run:()=>{setData(prev=>kind==='material'?{...prev,materials:prev.materials.filter(m=>m.id!==id),loans:prev.loans.filter(l=>l.materialId!==id)}:{...prev,movements:prev.movements.filter(t=>t.id!==id)});setNotice('Registo eliminado.');}});
- function submit(event:FormEvent<HTMLFormElement>){
-  event.preventDefault(); const f=new FormData(event.currentTarget); const val=(k:string)=>String(f.get(k)||'').trim();
-  const id=crypto.randomUUID();
-  if(modal==='material'){
-   const total=Number(val('total'));
-   if(!val('name')||!Number.isSafeInteger(total)||total<1||total<(edit?.borrowed??0)){setFormError('Indica um nome e uma quantidade inteira que cubra os empréstimos ativos.');return;}
-   const item:Material={id:edit?.id??id,name:val('name'),category:val('category'),total,borrowed:edit?.borrowed??0,condition:val('condition'),location:val('location')};
-   update({...data,materials:edit?data.materials.map(m=>m.id===edit.id?item:m):[...data.materials,item]});
-  }else if(modal==='income'||modal==='expense'){
-   const amount=Math.round(Number(val('amount'))*100)/100;
-   if(!Number.isFinite(amount)||amount<=0||!val('description')){setFormError('Preenche a descrição e um valor superior a zero.');return;}
-   update({...data,movements:[...data.movements,{id,description:val('description'),category:val('category'),type:modal,amount,date:val('date')}]});
-  }else if(modal==='loan'){
-   const item=data.materials.find(m=>m.id===val('materialId'));const quantity=Number(val('quantity'));
-   if(!item||!Number.isSafeInteger(quantity)||quantity<=0||quantity>item.total-item.borrowed){setFormError('A quantidade pedida excede o material disponível.');return;}
-   if(!val('person')){setFormError('Indica quem fica responsável pelo material.');return;}
-   update({...data,materials:data.materials.map(m=>m.id===item.id?{...m,borrowed:m.borrowed+quantity}:m),loans:[...data.loans,{id,materialId:item.id,person:val('person'),quantity,due:val('due'),returned:false}]});
+ const [session,setSession]=useState<Session|null>(null);
+ const [loading,setLoading]=useState(true);
+ const [authLoading,setAuthLoading]=useState(false);
+ const [mode,setMode]=useState<'login'|'signup'|'reset'|'password'>('login');
+ const [message,setMessage]=useState('');
+ const [error,setError]=useState('');
+ const [role,setRole]=useState<string|null>(null);
+ const [snapshot,setSnapshot]=useState<Snapshot|null>(null);
+ const revision=useRef(0);
+ const saveLock=useRef(false);
+ const mounted=useRef(true);
+ const supabase=getSupabase();
+ useEffect(()=>{
+  mounted.current=true;
+  if(!supabase){setLoading(false);return;}
+  supabase.auth.getSession().then(({data,error})=>{if(!mounted.current)return;if(error)setError('Não foi possível recuperar a sessão. Entra novamente.');setSession(data.session);setLoading(false);});
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,next)=>{
+   setSession(next);
+   if(event==='PASSWORD_RECOVERY')setMode('password');
+   if(event==='SIGNED_OUT'){setRole(null);setSnapshot(null);setMode('login');}
+  });
+  return()=>{mounted.current=false;subscription.unsubscribe();};
+ },[supabase]);
+ useEffect(()=>{
+  if(!supabase||!session?.user.id)return;
+  let cancelled=false;
+  setRole(null);setSnapshot(null);setLoading(true);setError('');
+  async function load(){
+   const {error:joinError}=await supabase!.rpc('request_clan_access');
+   if(cancelled)return;
+   if(joinError){setError('Não foi possível aceder à base de dados. Confirma se a migração SQL foi aplicada.');setLoading(false);return;}
+   const {data:member,error:memberError}=await supabase!.from('clan_members').select('role').eq('user_id',session!.user.id).single();
+   if(cancelled)return;
+   if(memberError){setError('Não foi possível verificar a autorização. Tenta novamente.');setLoading(false);return;}
+   setRole(member.role);
+   if(member.role!=='pending'){
+    const {data,error}=await supabase!.from('clan_state').select('payload,revision').eq('id',1).single();
+    if(cancelled)return;
+    if(error||!data||!isData(data.payload))setError('Não foi possível carregar os dados do clã. Verifica a ligação e a configuração da base de dados.');
+    else {revision.current=data.revision;setSnapshot(data as Snapshot);}
+   }
+   setLoading(false);
   }
-  setModal(null);setNotice('Registo guardado com sucesso.');
- }
- function returnLoan(id:string){const loan=data.loans.find(l=>l.id===id);if(!loan||loan.returned)return;update({...data,loans:data.loans.map(l=>l.id===id?{...l,returned:true}:l),materials:data.materials.map(m=>m.id===loan.materialId?{...m,borrowed:m.borrowed-loan.quantity}:m)});setNotice('Devolução registada. Material disponível no inventário.');}
- function download(content:string,type:string,name:string){const url=URL.createObjectURL(new Blob([content],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
- function exportCSV(){const safe=(v:string)=>'"'+(/^[=+\-@\t\r]/.test(v)?"'":'')+v.replaceAll('"','""')+'"';const rows=[['Data','Descrição','Categoria','Tipo','Valor (EUR)'],...filteredMovements.map(t=>[t.date,t.description,t.category,t.type==='income'?'Receita':'Despesa',(t.type==='income'?t.amount:-t.amount).toFixed(2).replace('.',',')])];download('\uFEFF'+rows.map(row=>row.map(safe).join(';')).join('\r\n'),'text/csv;charset=utf-8',`cla71-financas-${today()}.csv`);}
- async function importData(file:File){try{if(file.size>5_000_000)throw Error();const parsed=JSON.parse(await file.text());if(!isData(parsed))throw Error();setConfirm({text:'Substituir os dados atuais pelos dados desta cópia de segurança?',run:()=>{setData(parsed);setDemo(false);setNotice('Cópia de segurança importada.');}});}catch{setNotice('Ficheiro inválido. Seleciona uma cópia JSON exportada pelo Clã 71.');}}
- const startClean=()=>setConfirm({text:'Começar com os registos vazios? Exporta primeiro uma cópia se quiseres guardar os dados atuais.',run:()=>{setData(structuredClone(emptyData));setDemo(false);setNotice('Tudo pronto. Já podes adicionar os dados do clã.');}});
- const chartMonths=Array.from({length:Number(period)},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-Number(period)+1+i);const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {key,label:d.toLocaleDateString('pt-PT',{month:'short'}).replace('.',''),income:data.movements.filter(t=>t.date.startsWith(key)&&t.type==='income').reduce((s,t)=>s+t.amount,0),expense:data.movements.filter(t=>t.date.startsWith(key)&&t.type==='expense').reduce((s,t)=>s+t.amount,0)};});
- const maxChart=Math.max(100,...chartMonths.flatMap(m=>[m.income,m.expense]));
- const movementTable=(full=false)=><div className="table-scroll"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th className="right">Valor</th>{full&&<th aria-label="Ações"/>}</tr></thead><tbody>{(full?filteredMovements:transactions.slice(0,4)).map(t=><tr key={t.id}><td><div className="transaction-name"><span className={`transaction-icon ${t.type}`} aria-label={t.type==='income'?'Receita':'Despesa'}>{t.type==='income'?<ArrowDownLeft size={18}/>:<ArrowUpRight size={18}/>}</span><strong>{t.description}</strong></div></td><td><span className="category">{t.category}</span></td><td className="muted nowrap">{dateLabel(t.date)}</td><td className={`right nowrap amount ${t.type}`}>{t.type==='income'?'+':'−'} {money(t.amount)}</td>{full&&<td><button className="icon-button" aria-label={`Eliminar ${t.description}`} onClick={()=>askDelete(t.id,'movement')}><Trash2 size={16}/></button></td>}</tr>)}</tbody></table>{(full?filteredMovements:transactions).length===0&&<div className="empty"><Wallet/>Ainda não existem movimentos.</div>}</div>;
+  void load();return()=>{cancelled=true;};
+ },[supabase,session?.user.id]);
 
- return <div className="app-shell">
-  {mobile&&<button className="nav-overlay" aria-label="Fechar navegação" onClick={()=>setMobile(false)}/>}
-  <aside className={`sidebar ${mobile?'open':''}`}>
-   <a className="brand" href="#" onClick={e=>{e.preventDefault();go('dashboard');}}><span className="brand-icon"><Compass size={29} strokeWidth={1.6}/></span><span>clã<span className="brand-number">71</span><small>SEMPRE A CAMINHO.</small></span></a>
-   <div className="group-label">AGRUPAMENTO 1008<span>Forte da Casa</span></div>
-   <span className="nav-label">ESPAÇO DO CLÃ</span>
-   <nav>{nav.map(n=><button key={n.id} className={view===n.id?'active':''} onClick={()=>go(n.id)}><n.icon size={19}/>{n.label}{n.id==='loans'&&activeLoans.length>0&&<span className="nav-count">{activeLoans.length}</span>}</button>)}</nav>
-   <div className="sidebar-bottom"><div className="scout-note"><Tent size={25}/><strong>Deixa o mundo melhor.</strong><p>O próximo caminho começa<br/>com um clã organizado.</p><span>BOA CAÇA E BOA PESCA <ArrowUpRight size={13}/></span></div><button className={view==='settings'?'settings-link active':'settings-link'} onClick={()=>go('settings')}><Settings size={19}/>Definições</button><div className="sidebar-footer"><span className="avatar">71</span><div><strong>Clã 71</strong><small>Agrupamento 1008</small></div><ShieldCheck size={17}/></div></div>
-  </aside>
-  <div className="workspace"><header className="topbar"><div className="breadcrumb"><button className="mobile-menu icon-button" aria-label="Abrir navegação" onClick={()=>setMobile(true)}><Menu size={21}/></button><span>Espaço do clã</span><span className="slash">/</span><strong>{titles[view]}</strong></div><div className="header-right"><span className="local-status"><i/> Guardado neste navegador</span><button className="icon-button" aria-label="Ajuda e cópias de segurança" onClick={()=>go('settings')}><CircleHelp size={19}/></button><span className="avatar small">71</span></div></header>
-  <main>
-   <div className="page-heading"><div><div className="eyebrow">CLÃ 71 · FORTE DA CASA</div><h1>{titles[view]}<span className="heading-dot">.</span></h1><p>{view==='dashboard'?'Tudo o que o clã precisa, num só lugar.':view==='materials'?'Cada peça no seu lugar. Tudo pronto para a próxima aventura.':view==='finance'?'Contas claras para ir mais longe, juntos.':view==='loans'?'Sabe onde anda o material e quando está de volta.':'O teu espaço, os teus dados.'}</p></div><div className="heading-actions">{view==='dashboard'?<button className="button secondary" onClick={()=>download(JSON.stringify(data,null,2),'application/json',`cla71-backup-${today()}.json`)}><Download size={16}/>Exportar dados</button>:view==='materials'?<button className="button primary" onClick={()=>open('material')}><Plus size={17}/>Adicionar material</button>:view==='finance'?<><button className="button secondary" onClick={()=>open('expense')}><Plus size={16}/>Despesa</button><button className="button primary" onClick={()=>open('income')}><Plus size={16}/>Receita</button></>:view==='loans'?<button className="button primary" disabled={!data.materials.some(m=>m.total>m.borrowed)} onClick={()=>open('loan')}><Plus size={16}/>Novo empréstimo</button>:null}</div></div>
-   {demo&&<div className="demo-banner"><span><span className="demo-dot"/> Estás a explorar dados de demonstração.</span><button onClick={startClean}>Começar com os dados do clã <ArrowRight size={14}/></button></div>}
-   {!ready?<div className="empty">A preparar o espaço do clã…</div>:<>
-   {(view==='dashboard'||view==='finance')&&<div className="stats-grid"><div className="stat-card balance"><div className="stat-label">Saldo disponível<span><Wallet size={18}/></span></div><div className="stat-value">{money(income-expense)}</div><div className="stat-foot"><span className="live-dot"/> Balanço de todos os movimentos</div><svg className="balance-decoration" viewBox="0 0 140 80" aria-hidden="true"><path d="M0 75 25 55 45 64 66 35 85 46 105 15 140 0"/></svg></div><div className="stat-card"><div className="stat-label">Receitas totais<span className="mint"><ArrowDownLeft size={19}/></span></div><div className="stat-value">{money(income)}</div><div className="stat-foot"><span className="legend-dot green"/>{data.movements.filter(t=>t.type==='income').length} entradas registadas</div></div><div className="stat-card"><div className="stat-label">Despesas totais<span className="peach"><ArrowUpRight size={19}/></span></div><div className="stat-value">{money(expense)}</div><div className="stat-foot"><span className="legend-dot orange"/>{data.movements.filter(t=>t.type==='expense').length} saídas registadas</div></div><div className="stat-card"><div className="stat-label">Material disponível<span className="sand"><Backpack size={19}/></span></div><div className="stat-value">{units-borrowed}<small> / {units}</small></div><div className="stat-foot"><span className="legend-dot tan"/>{borrowed} unidades emprestadas</div></div></div>}
-   {view==='dashboard'&&<>
-    <div className="dashboard-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h2>O caminho das finanças</h2><p>Receitas e despesas ao longo do tempo</p></div><label className="select-wrap"><select aria-label="Período do gráfico" value={period} onChange={e=>setPeriod(e.target.value)}><option value="6">Últimos 6 meses</option><option value="3">Últimos 3 meses</option><option value="12">Últimos 12 meses</option></select></label></div><div className="chart-legend"><span><i className="legend-dot green"/>Receitas</span><span><i className="legend-dot orange"/>Despesas</span></div><div className="chart"><div className="chart-axis">{[1,.75,.5,.25,0].map(v=><span key={v}>{Math.round(maxChart*v)} €</span>)}</div><div className="plot"><div className="grid-lines">{[0,1,2,3,4].map(n=><i key={n}/>)}</div><div className="chart-columns">{chartMonths.map(m=><div className="month" key={m.key}><div className="bar-pair"><div className="bar income" title={`${m.label}: receitas ${money(m.income)}`} style={{height:`${m.income/maxChart*100}%`}}/><div className="bar expense" title={`${m.label}: despesas ${money(m.expense)}`} style={{height:`${m.expense/maxChart*100}%`}}/></div><span>{m.label}</span><span className="sr-only">Receitas {money(m.income)}, despesas {money(m.expense)}</span></div>)}</div></div></div><div className="chart-footer"><TrendingUp size={15}/><span>Pequenos contributos. Grandes aventuras.</span><button onClick={()=>go('finance')}>Ver finanças <ArrowRight size={14}/></button></div></section>
-    <section className="panel inventory-panel"><div className="panel-heading"><div><h2>Prontos para partir</h2><p>O estado do nosso material</p></div><Box size={19} className="muted"/></div><div className="inventory-ring" style={{background:`conic-gradient(var(--green) 0 ${units?(units-borrowed)/units*100:0}%, #e9ede7 0 100%)`}}><div><strong>{units}</strong><span>unidades no inventário</span></div></div><div className="inventory-key"><div><span><i className="legend-dot green"/>Disponíveis</span><strong>{units-borrowed}</strong></div><div><span><i className="legend-dot light"/>Emprestadas</span><strong>{borrowed}</strong></div></div><button className="text-link inventory-link" onClick={()=>go('materials')}>Consultar inventário <ArrowRight size={15}/></button></section></div>
-    <div className="dashboard-bottom"><section className="panel movements-panel"><div className="panel-heading"><div><h2>Últimos movimentos</h2><p>As contas do clã, sempre à mão</p></div><button className="text-link" onClick={()=>go('finance')}>Ver todos <ArrowRight size={14}/></button></div>{movementTable()}</section><section className="panel attention-panel"><div className="panel-heading"><div><h2>De olho no material</h2><p>Um pouco de atenção faz a diferença</p></div><span className="count-badge">{needsCare.length}</span></div>{needsCare.slice(0,3).map(m=><button className="attention-item" key={m.id} onClick={()=>{go('materials');open('material',m);}}><span className="attention-icon"><Package size={19}/></span><span><strong>{m.name}</strong><small>{m.location}</small></span><span className={`badge ${m.condition==='Reparar'?'bad':'warning'}`}>{m.condition}</span></button>)}{!needsCare.length&&<div className="empty compact"><Check/>Tudo em bom estado!</div>}<div className="attention-footer"><ShieldCheck size={15}/>Cuidar do material é cuidar do clã.</div></section></div>
-    <div className="quick-actions"><span>A próxima aventura começa aqui.</span><button onClick={()=>open('material')}><Plus size={16}/>Adicionar material</button><button onClick={()=>open('income')}><Plus size={16}/>Registar receita</button><button onClick={()=>open('expense')}><Plus size={16}/>Registar despesa</button></div>
-   </>}
-   {view==='materials'&&<section className="panel"><div className="toolbar"><div className="search"><Search size={17}/><input aria-label="Pesquisar material" placeholder="Pesquisar material ou localização…" value={query} onChange={e=>setQuery(e.target.value)}/></div><select aria-label="Categoria" value={filter} onChange={e=>setFilter(e.target.value)}><option>Todas</option>{Array.from(new Set(data.materials.map(m=>m.category))).map(c=><option key={c}>{c}</option>)}</select><span className="result-count">{materials.length} artigos</span></div><div className="table-scroll"><table><thead><tr><th>Material</th><th>Categoria</th><th>Disponível</th><th>Estado</th><th>Localização</th><th aria-label="Ações"/></tr></thead><tbody>{materials.map(m=><tr key={m.id}><td><div className="transaction-name"><span className="material-icon"><Tent size={21}/></span><button className="name-button" onClick={()=>open('material',m)}>{m.name}</button></div></td><td><span className="category">{m.category}</span></td><td><strong>{m.total-m.borrowed}</strong><span className="muted"> / {m.total}</span></td><td><span className={`badge ${m.condition==='Bom'?'good':m.condition==='Reparar'?'bad':'warning'}`}>{m.condition}</span></td><td className="muted">{m.location||'—'}</td><td><button className="icon-button" disabled={m.borrowed>0} aria-label={`Eliminar ${m.name}`} title={m.borrowed?'Regista primeiro a devolução':'Eliminar material'} onClick={()=>askDelete(m.id,'material')}><Trash2 size={16}/></button></td></tr>)}</tbody></table>{!materials.length&&<div className="empty"><Backpack/>Nenhum material encontrado.<button className="text-link" onClick={()=>open('material')}>Adicionar o primeiro artigo <Plus size={15}/></button></div>}</div><div className="table-footer">Seleciona o nome de um artigo para editar os detalhes.</div></section>}
-   {view==='finance'&&<section className="panel"><div className="panel-heading"><div><h2>Todos os movimentos</h2><p>O histórico da tesouraria do clã</p></div><button className="button secondary" onClick={exportCSV}><Download size={15}/>Exportar CSV</button></div><div className="toolbar"><div className="search"><Search size={17}/><input placeholder="Pesquisar movimentos…" aria-label="Pesquisar movimentos" value={query} onChange={e=>setQuery(e.target.value)}/></div><select aria-label="Tipo de movimento" value={filter} onChange={e=>setFilter(e.target.value)}><option value="Todas">Todos os movimentos</option><option value="income">Receitas</option><option value="expense">Despesas</option></select></div>{movementTable(true)}<div className="table-footer">{filteredMovements.length} movimentos · Total da seleção: {money(filteredMovements.reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0))}</div></section>}
-   {view==='loans'&&<section className="panel"><div className="toolbar"><div className="search"><Search size={17}/><input placeholder="Pesquisar responsável ou material…" aria-label="Pesquisar empréstimos" value={query} onChange={e=>setQuery(e.target.value)}/></div><select aria-label="Estado do empréstimo" value={filter} onChange={e=>setFilter(e.target.value)}><option>Todas</option><option>Ativos</option><option>Devolvidos</option></select></div><div className="table-scroll"><table><thead><tr><th>Material / responsável</th><th>Quantidade</th><th>Devolver até</th><th>Estado</th><th aria-label="Ações"/></tr></thead><tbody>{data.loans.filter(l=>`${l.person} ${data.materials.find(m=>m.id===l.materialId)?.name}`.toLowerCase().includes(query.toLowerCase())&&(filter==='Todas'||(filter==='Ativos'?!l.returned:l.returned))).map(l=><tr key={l.id}><td><strong>{data.materials.find(m=>m.id===l.materialId)?.name}</strong><div className="cell-sub">{l.person}</div></td><td>{l.quantity}</td><td>{dateLabel(l.due)} {l.due.slice(0,4)}</td><td><span className={`badge ${l.returned?'good':l.due<today()?'bad':'warning'}`}>{l.returned?'Devolvido':l.due<today()?'Em atraso':'Emprestado'}</span></td><td>{!l.returned&&<button className="button secondary small-button" onClick={()=>returnLoan(l.id)}><Check size={14}/>Devolver</button>}</td></tr>)}</tbody></table>{data.loans.length===0&&<div className="empty"><Handshake/>Ainda não existem empréstimos. Adiciona material para começar.</div>}</div></section>}
-   {view==='settings'&&<div className="settings-grid"><section className="panel settings-card"><span className="settings-icon"><ShieldCheck/></span><h2>Os dados ficam contigo</h2><p>Esta versão guarda os registos apenas neste navegador, neste dispositivo. Não há sincronização entre membros nem autenticação.</p><p>Exporta cópias de segurança regularmente e antes de limpar os dados do navegador. Para trabalho partilhado, será necessário configurar uma base de dados e acesso por utilizador.</p><span className="badge good">{demo?'Modo de demonstração':'Armazenamento local'}</span></section><section className="panel settings-card"><span className="settings-icon"><Download/></span><h2>Cópias de segurança</h2><p>Exporta todo o inventário, movimentos e empréstimos num ficheiro JSON. Importar uma cópia substitui os dados atuais.</p><div className="settings-buttons"><button className="button primary" onClick={()=>download(JSON.stringify(data,null,2),'application/json',`cla71-backup-${today()}.json`)}><Download size={16}/>Exportar cópia</button><button className="button secondary" onClick={()=>upload.current?.click()}><Upload size={16}/>Importar cópia</button><input hidden type="file" accept="application/json,.json" ref={upload} onChange={e=>{const f=e.target.files?.[0];if(f)void importData(f);e.target.value='';}}/></div></section><section className="panel settings-card"><span className="settings-icon"><Compass/></span><h2>Clã 71</h2><p>Agrupamento 1008 · Forte da Casa<br/>Gestão de material e tesouraria.</p><div className="identity-rule"/><p>Feito para organizar o presente e preparar a próxima aventura.</p></section><section className="panel settings-card"><span className="settings-icon"><FileText/></span><h2>Um novo ponto de partida</h2><p>Começa com o inventário e as contas vazios. Os dados de exemplo servem apenas para explorar a aplicação.</p><div className="settings-buttons"><button className="button secondary" onClick={startClean}>Começar do zero</button><button className="text-link" onClick={()=>setConfirm({text:'Substituir os registos atuais pelos dados de demonstração?',run:()=>{setData(structuredClone(demoData));setDemo(true);setNotice('Demonstração carregada. Os dados reais guardados mantêm-se até começares do zero ou importares uma cópia.');}})}>Explorar demonstração <ArrowRight size={14}/></button></div></section></div>}
-   </>}
-   <footer className="page-footer"><span>Clã 71 <span> / </span> Agrupamento 1008 · Forte da Casa</span><span><Compass size={13}/> Sempre a caminho.</span></footer>
-  </main></div>
-  <dialog ref={dialogRef} className="modal" onCancel={()=>setModal(null)} onClick={e=>{if(e.target===e.currentTarget)setModal(null);}}><div className="modal-heading"><div><span className="eyebrow">CLÃ 71</span><h2>{modal==='material'?(edit?'Editar material':'Novo material'):modal==='income'?'Registar receita':modal==='expense'?'Registar despesa':'Novo empréstimo'}</h2></div><button className="icon-button" aria-label="Fechar" onClick={()=>setModal(null)}><X size={20}/></button></div><form onSubmit={submit} key={`${modal}-${edit?.id??'new'}`}>
-   {modal==='material'?<><label>Nome do material<input required name="name" maxLength={120} defaultValue={edit?.name} placeholder="Ex.: Tenda de patrulha"/></label><div className="form-grid"><label>Categoria<select name="category" defaultValue={edit?.category??'Campismo'}>{['Campismo','Cozinha','Pioneirismo','Saúde','Ferramentas','Outros'].map(c=><option key={c}>{c}</option>)}</select></label><label>Quantidade total<input type="number" required name="total" min={Math.max(1,edit?.borrowed??0)} max={100000} step="1" defaultValue={edit?.total??1}/></label></div><label>Localização<input name="location" maxLength={120} defaultValue={edit?.location} placeholder="Ex.: Sede · Armário A"/></label><label>Estado<select name="condition" defaultValue={edit?.condition??'Bom'}><option>Bom</option><option>Rever</option><option>Reparar</option></select></label></>:modal==='income'||modal==='expense'?<><label>Descrição<input required name="description" maxLength={160} placeholder={modal==='income'?'Ex.: Quotas de novembro':'Ex.: Alimentação do acampamento'}/></label><div className="form-grid"><label>Valor (€)<input type="number" required name="amount" min="0.01" max="9999999" step="0.01" placeholder="0,00"/></label><label>Data<input required type="date" name="date" defaultValue={today()}/></label></div><label>Categoria<select name="category">{(modal==='income'?['Quotas','Angariações','Donativos','Atividades','Outros']:['Material','Atividades','Transportes','Alimentação','Outros']).map(c=><option key={c}>{c}</option>)}</select></label></>:<><label>Material<select name="materialId" required>{data.materials.filter(m=>m.total>m.borrowed).map(m=><option value={m.id} key={m.id}>{m.name} ({m.total-m.borrowed} disponíveis)</option>)}</select></label><label>Responsável / equipa<input required name="person" maxLength={120} placeholder="Quem fica com o material?"/></label><div className="form-grid"><label>Quantidade<input required type="number" min="1" step="1" name="quantity" defaultValue="1"/></label><label>Data de devolução<input required type="date" name="due" min={today()} defaultValue={today()}/></label></div></>}
-   {formError&&<p className="form-error" role="alert">{formError}</p>}<div className="modal-actions"><button type="button" className="button secondary" onClick={()=>setModal(null)}>Cancelar</button><button className="button primary" type="submit"><Check size={16}/>Guardar {modal==='material'?'material':modal==='loan'?'empréstimo':'movimento'}</button></div>
-  </form></dialog>
-  <dialog ref={confirmRef} className="modal confirm-modal" onCancel={()=>setConfirm(null)}><h2>Confirmar alteração</h2><p>{confirm?.text}</p><div className="modal-actions"><button className="button secondary" onClick={()=>setConfirm(null)}>Cancelar</button><button className="button primary" onClick={()=>{confirm?.run();setConfirm(null);}}>Confirmar</button></div></dialog>
-  {notice&&<div className="toast" role="status"><AlertCircle size={18}/>{notice}<button aria-label="Fechar aviso" onClick={()=>setNotice('')}><X size={16}/></button></div>}
- </div>;
+ async function refresh(){
+  if(!supabase||!session||saveLock.current)return;
+  const {data:member,error:memberError}=await supabase.from('clan_members').select('role').eq('user_id',session.user.id).single();
+  if(memberError)throw Error('Não foi possível verificar o acesso.');
+  setRole(member.role);
+  if(member.role==='pending'){setSnapshot(null);return;}
+  const {data,error}=await supabase.from('clan_state').select('payload,revision').eq('id',1).single();
+  if(error||!data||!isData(data.payload))throw Error('Não foi possível atualizar os registos. Tenta novamente.');
+  revision.current=data.revision;setSnapshot(data as Snapshot);
+ }
+ async function save(payload:Data){
+  if(!supabase||!session)throw Error('Entra novamente para guardar.');
+  if(saveLock.current)throw Error('Aguarda que a gravação atual termine.');
+  saveLock.current=true;
+  try{
+   const {data,error}=await supabase.rpc('save_clan_state',{new_payload:payload,expected_revision:revision.current});
+   if(error){
+    if(error.message.includes('CONFLICT')){saveLock.current=false;await refresh();throw Error('Outro membro alterou os dados. A versão atual foi carregada; repete a tua alteração.');}
+    if(error.message.includes('FORBIDDEN'))throw Error('Só a tesouraria e os administradores podem alterar as contas.');
+    throw Error('A gravação não foi confirmada. Atualiza os dados antes de repetir a operação.');
+   }
+   const row=Array.isArray(data)?data[0]:data;
+   if(!row||!Number.isSafeInteger(row.revision))throw Error('A resposta da gravação não é válida. Atualiza os dados.');
+   revision.current=row.revision;setSnapshot({payload,revision:row.revision});
+  }finally{saveLock.current=false;}
+ }
+ async function logout(){if(!supabase)return;const {error}=await supabase.auth.signOut();if(error){setError('Não foi possível terminar a sessão. Tenta novamente.');return;}setSnapshot(null);setRole(null);setSession(null);}
+ async function authenticate(event:FormEvent<HTMLFormElement>){
+  event.preventDefault();if(!supabase)return;setAuthLoading(true);setError('');setMessage('');
+  const f=new FormData(event.currentTarget);const email=String(f.get('email')??'').trim();const password=String(f.get('password')??'');
+  try{
+   if(mode==='login'){
+    const {error}=await supabase.auth.signInWithPassword({email,password});
+    if(error)throw Error('Não foi possível entrar. Confirma o email, a palavra-passe e a confirmação do email.');
+   }else if(mode==='signup'){
+    const {error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin}});
+    if(error)throw Error('Não foi possível criar a conta. Tenta novamente ou contacta o administrador.');
+    setMessage('Consulta o teu email para confirmar a conta. Depois, aguarda a aprovação de um administrador.');
+   }else if(mode==='reset'){
+    const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+    if(error)throw Error('Não foi possível enviar a recuperação. Tenta novamente mais tarde.');
+    setMessage('Se existir uma conta com esse email, receberás uma ligação para definir uma nova palavra-passe.');
+   }else{
+    const {error}=await supabase.auth.updateUser({password});
+    if(error)throw Error('Não foi possível atualizar a palavra-passe. Pede uma nova ligação de recuperação.');
+    window.history.replaceState({},'',window.location.pathname);setMode('login');setMessage('Palavra-passe atualizada.');
+   }
+  }catch(e){setError(e instanceof Error?e.message:'Não foi possível concluir a operação.');}finally{setAuthLoading(false);}
+ }
+ if(session&&snapshot&&role&&mode!=='password')return <><Dashboard initialData={snapshot.payload} onSave={save} onLogout={logout} onRefresh={refresh} userEmail={session.user.email??''} role={role}/>{error&&<div className="toast" role="alert">{error}<button onClick={()=>setError('')}>×</button></div>}</>;
+ return <main className="auth-shell"><section className="auth-story"><span className="auth-brand"><Compass size={34}/>clã<strong>71</strong></span><span className="eyebrow">AGRUPAMENTO 1008 · FORTE DA CASA</span><h1>Juntos, vamos<br/>mais longe<span className="heading-dot">.</span></h1><p>O material, as contas e o próximo caminho.<br/>Um espaço partilhado por todo o clã.</p><span className="auth-story-footer"><ShieldCheck size={17}/>Acesso reservado aos membros autorizados.</span></section><section className="auth-card">
+ {!supabase?<><LockKeyhole size={29}/><h2>Vamos ligar o espaço do clã</h2><p>A autenticação e a base de dados precisam da configuração do Supabase.</p><ol><li>Aplicar a migração SQL da pasta <code>supabase/migrations</code>.</li><li>Configurar <code>NEXT_PUBLIC_SUPABASE_URL</code> e <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> na Vercel.</li><li>Voltar a publicar o projeto.</li></ol><p>O guia completo está no README do repositório.</p></>:loading?<><RefreshCw size={26}/><h2>A preparar o teu espaço…</h2></>:session&&mode!=='password'?<><ShieldCheck size={29}/><h2>{role==='pending'?'Conta à espera de aprovação':'Não foi possível abrir o clã'}</h2><p>{role==='pending'?'Um administrador precisa de aprovar o teu acesso. Após a aprovação, atualiza esta página.':'Verifica a configuração e tenta novamente.'}</p><p className="auth-email">{session.user.email}</p><div className="settings-buttons"><button className="button primary" onClick={()=>window.location.reload()}><RefreshCw size={16}/>Atualizar</button><button className="button secondary" onClick={()=>void logout()}><LogOut size={16}/>Sair</button></div></>:<><span className="settings-icon"><LockKeyhole size={23}/></span><h2>{mode==='login'?'Bem-vindo ao clã':mode==='signup'?'Pedir acesso':mode==='reset'?'Recuperar acesso':'Nova palavra-passe'}</h2><p>{mode==='login'?'Entra para continuar o caminho.':mode==='signup'?'Cria a tua conta. Um administrador aprovará o acesso.':mode==='reset'?'Enviamos uma ligação para o teu email.':'Escolhe uma palavra-passe com pelo menos 12 caracteres.'}</p><form onSubmit={authenticate}>{mode!=='password'&&<label>Email<input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="o.teu.email@exemplo.pt"/></label>}{mode!=='reset'&&<label>Palavra-passe<input type="password" name="password" required autoComplete={mode==='login'?'current-password':'new-password'} minLength={mode==='login'?1:12} maxLength={128}/></label>}<button type="submit" className="button primary" disabled={authLoading}>{authLoading?'Aguarda…':mode==='login'?'Entrar':mode==='signup'?'Criar conta':mode==='reset'?'Enviar ligação':'Guardar palavra-passe'}</button></form>{mode!=='password'&&<div className="auth-links"><button onClick={()=>{setMode(mode==='signup'?'login':'signup');setError('');setMessage('');}}>{mode==='signup'?'Já tenho conta':'Pedir acesso ao clã'}</button><button onClick={()=>{setMode(mode==='reset'?'login':'reset');setError('');setMessage('');}}>{mode==='reset'?'Voltar a entrar':'Esqueci-me da palavra-passe'}</button></div>}</>}
+ {error&&<p className="auth-error" role="alert">{error}</p>}{message&&<p className="auth-message" role="status">{message}</p>}
+ </section></main>;
 }

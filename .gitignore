@@ -4,5 +4,6 @@ node_modules/
 out/
 .vercel/
 .env*
+backups/
 *.tsbuildinfo
 !.env.example
