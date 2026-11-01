@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const ts=require('typescript');
+require.extensions['.ts']=(m,file)=>m._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,file);
+const {isData}=require('../lib/data.ts');
+const {permissionsFor}=require('../lib/people.ts');
+const material={id:'tent',name:'Tenda',category:'Campismo',total:1,borrowed:0,condition:'Bom',location:'Sede',alerts:[{id:'a1',kind:'missing',description:'Faltam acessórios',items:[{name:'Martelo',quantity:1},{name:'Estacas',quantity:10}],resolved:false,createdAt:'2026-11-01T12:00:00Z'}]};
+const person={id:'p1',name:'Pessoa',active:true,email:'pessoa@example.test',positions:['material_keeper'],tribeId:'t1'};
+const data={version:1,materials:[material],movements:[],loans:[],tribes:[{id:'t1',name:'Tribo Horizonte'}],treasury:{types:[],typologies:[],entries:[],people:[person]}};
+assert.ok(isData(data));
+const clone=()=>structuredClone(data);
+let d=clone();d.materials[0].alerts[0].items[1].quantity=0;assert.equal(isData(d),false);
+d=clone();d.materials[0].alerts[0].items=[];assert.equal(isData(d),false);
+d=clone();d.materials[0].alerts.push(d.materials[0].alerts[0]);assert.equal(isData(d),false);
+d=clone();d.materials[0].alerts[0].resolved=true;assert.ok(isData(d));assert.equal(d.materials[0].total,1);
+d=clone();d.materials[0].total=0;assert.ok(isData(d),'Permite inventariar um artigo sem stock');
+d=clone();d.treasury.people[0].tribeId='unknown';assert.equal(isData(d),false);
+d=clone();d.treasury.people.push({...person,id:'p2',email:'PESSOA@example.test'});assert.equal(isData(d),false);
+d=clone();d.treasury.people[0].positions=['fake'];assert.equal(isData(d),false);
+const ids=['material_keeper','guide','deputy_guide','treasurer'];
+for(let mask=0;mask<16;mask++){
+ const roles=ids.filter((_,i)=>mask&(1<<i));
+ const p={...person,positions:roles};const perm=permissionsFor('member','PESSOA@example.test',[p]);
+ assert.equal(perm.material,roles.some(r=>['material_keeper','guide','deputy_guide'].includes(r)));
+ assert.equal(perm.finance,roles.some(r=>['treasurer','guide','deputy_guide'].includes(r)));
+ assert.equal(perm.admin,false);
+}
+assert.deepEqual(permissionsFor('member','other@example.test',[person]),{admin:false,material:false,finance:false});
+assert.deepEqual(permissionsFor('member',person.email,[{...person,active:false,positions:ids}]),{admin:false,material:false,finance:false});
+assert.deepEqual(permissionsFor('admin',person.email,[]),{admin:true,material:true,finance:true});
+console.log('Notificações, tribos e 16 combinações de cargos: OK');

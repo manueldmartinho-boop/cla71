@@ -1,6 +1,6 @@
 export type MoneyType = { id: string; name: string };
 export type Typology = { id: string; typeId: string; name: string; priority: number; spendable: boolean };
-export type Person = { id: string; name: string; active: boolean };
+export type Person = { id: string; name: string; active: boolean; email?: string; positions?: ('material_keeper'|'guide'|'deputy_guide'|'treasurer')[]; tribeId?:string|null };
 export type Entry = { id: string; personId: string; typologyId: string; cents: number; description: string; date: string; batchId: string | null };
 export type Treasury = { types: MoneyType[]; typologies: Typology[]; people: Person[]; entries: Entry[] };
 export type Allocation = { person: Person; sources: { typology: Typology; cents: number }[]; shortfall: number };
@@ -34,7 +34,7 @@ export function validateTreasury(value: unknown): value is Treasury {
  const str=(s:unknown)=>typeof s==='string'&&s.trim().length>0&&s.length<=200;
  const unique=(rows:{id:string}[])=>new Set(rows.map(x=>x.id)).size===rows.length;
  if(!t.types.every(x=>x&&str(x.id)&&str(x.name))||!unique(t.types))return false;
- if(!t.people.every(x=>x&&str(x.id)&&str(x.name)&&typeof x.active==='boolean')||!unique(t.people))return false;
+ if(!t.people.every(x=>x&&str(x.id)&&str(x.name)&&typeof x.active==='boolean'&&(x.email===undefined||x.email===''||(typeof x.email==='string'&&x.email.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.email)))&&(x.positions===undefined||(Array.isArray(x.positions)&&new Set(x.positions).size===x.positions.length&&x.positions.every(p=>['material_keeper','guide','deputy_guide','treasurer'].includes(p)))))||!unique(t.people))return false;
  if(!t.typologies.every(x=>x&&str(x.id)&&str(x.name)&&t.types.some(g=>g.id===x.typeId)&&Number.isSafeInteger(x.priority)&&x.priority>=0&&typeof x.spendable==='boolean')||!unique(t.typologies))return false;
  if(!t.entries.every(x=>x&&str(x.id)&&str(x.description)&&Number.isSafeInteger(x.cents)&&x.cents!==0&&Math.abs(x.cents)<=1_000_000_000&&t.people.some(p=>p.id===x.personId)&&t.typologies.some(c=>c.id===x.typologyId)&&typeof x.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&!Number.isNaN(Date.parse(x.date))&&(x.batchId===null||str(x.batchId)))||!unique(t.entries))return false;
  return t.people.every(p=>t.typologies.every(c=>balance(t,p.id,c.id)>=0));

@@ -14,14 +14,26 @@ Aplicação em **Next.js 16, React e TypeScript**, com autenticação Supabase e
 - Histórico de movimentos individuais, arquivo de pessoas e cópias de segurança JSON.
 - Entrada, pedido de acesso, confirmação de email e recuperação de palavra-passe.
 
-## Permissões
+## Pessoas, tribos e permissões
 
-- **Pendente:** sem acesso aos dados do clã.
-- **Membro:** consulta os dados e gere material e empréstimos.
-- **Tesouraria:** também gere receitas, despesas, pessoas, tipos, tipologias, saldos e retiradas.
-- **Administrador:** também aprova contas, atribui permissões, importa backups e limpa registos.
+A área **Pessoas e tribos** centraliza os perfis, saldos individuais e cargos. Cada pessoa pode pertencer a uma tribo e acumular vários cargos. O email associa o perfil à conta de entrada, que continua a precisar de aprovação em Definições.
 
-As permissões são verificadas na base de dados. O cliente utiliza apenas a chave pública Supabase; não usa service_role. A tesouraria pode acrescentar movimentos individuais, mas não remover o seu histórico. Cada gravação arquiva a versão anterior em clan_history, com o autor e a data.
+| Cargo | Material e empréstimos | Finanças |
+| --- | --- | --- |
+| Caminheiro sem cargo | Consulta | Consulta |
+| Guarda-material | Gestão | Consulta |
+| Tesoureira | Consulta | Gestão |
+| Guia / Subguia | Gestão | Gestão |
+
+Os cargos acumulam-se. Arquivar uma pessoa preserva saldos e histórico, retirando as permissões dos cargos. O administrador gere pessoas, tribos e aprovações. Contas pendentes não têm acesso aos dados. As regras são aplicadas na base de dados; um utilizador não consegue atribuir cargos a si próprio através do cliente.
+
+## Notificações de material
+
+Cada artigo tem avisos de falta, manutenção ou notas. As faltas incluem artigos e quantidades, por exemplo: 1 martelo e 10 estacas. Os avisos podem ser editados, resolvidos, reabertos ou removidos. Resolver um aviso não altera automaticamente o stock. É possível registar artigos com stock zero.
+
+O painel mostra avisos pendentes e devoluções em atraso. A edição do material preserva as notificações. Pessoas com cargos de material e administradores podem gerir avisos; os restantes membros consultam-nos.
+
+As contas utilizam apenas a chave pública Supabase; não se usa service_role no cliente. Cada gravação arquiva a versão anterior em clan_history, com autor e data. Quem tem gestão financeira pode acrescentar movimentos individuais, mas só um administrador pode substituir o histórico existente.
 
 ## Instalar
 
@@ -48,7 +60,7 @@ values (lower('EMAIL_DO_ADMINISTRADOR'))
 on conflict(email) do nothing;
 ```
 
-O convite é privado e é consumido quando a conta confirma o email e entra no site. As restantes contas começam pendentes. O primeiro administrador aprova-as em **Definições → Acessos ao clã**.
+O convite é privado e é consumido quando a conta confirma o email e entra no site. As restantes contas começam pendentes. O primeiro administrador aprova-as em **Definições → Acessos ao Clã**.
 
 ## Publicar na Vercel
 
@@ -62,7 +74,7 @@ As gravações são transações atómicas com bloqueio e revisão. Se duas pess
 
 Cada conta individual tem um saldo por tipologia calculado em cêntimos inteiros. O servidor verifica a estrutura, relações, quantidades e saldos não negativos. A confirmação de uma retirada guarda os débitos individuais e a eventual despesa geral na mesma transação.
 
-Backups JSON da primeira versão local podem ser importados por um administrador. Não existe importação automática do navegador antigo, para evitar substituir dados partilhados sem confirmação. A pasta backups/ é privada e está excluída do Git.
+A interface permite exportar cópias de segurança. A importação e a demonstração foram retiradas. A pasta backups/ é privada e está excluída do Git.
 
 ## Verificar
 
@@ -74,4 +86,4 @@ pnpm build
 
 O teste cobre divisão entre tipologias, prioridades, fundos protegidos, pessoas arquivadas, simulação sem mutação e bloqueio de saldos negativos.
 
-Os dados de demonstração só são carregados por opção de um utilizador autenticado e não são guardados na base de dados.
+As amostras existentes no código são usadas apenas nos testes; não são carregadas na aplicação.
