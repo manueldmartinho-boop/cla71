@@ -25,6 +25,7 @@ export default function Home() {
  const saveLock=useRef(false);
  const mounted=useRef(true);
  const supabase=getSupabase();
+ useEffect(()=>{if(pathname==='/recuperar-password')setMode(session?'password':'reset');else setMode(previous=>previous==='password'||previous==='reset'?'login':previous);},[pathname]);
  useEffect(()=>{
   mounted.current=true;
   if(!supabase){setLoading(false);return;}

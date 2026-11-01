@@ -98,3 +98,11 @@ No Perfil pode-se alterar a palavra-passe confirmando a atual e terminar sessão
 Progresso: quadro FACEIS e ficha por caminheiro, 42 objetivos de referência da IV secção, estados Não tem/Proposto/Em curso/Tem, etapa, observações e várias pendências com prazo e conclusão. Rótulos resumidos baseados no programa CNE e no cartaz de objetivos ligado na aplicação. Não atribui insígnias automaticamente. Dirigentes e administradores atualizam; restantes membros consultam.
 
 clan_progress_logs regista autor verificado pelo servidor, data e valores antes/depois na mesma transação. O cliente só pode ler os registos, nunca alterá-los. A migração aceita os dados antigos sem os substituir.
+
+## Navegação partilhada e empréstimos
+
+As páginas do grupo app/(clan) partilham a mesma sessão e o mesmo estado em memória. Mudar de área não repete a autenticação nem o carregamento inicial; atualizar a página continua a consultar a versão mais recente.
+
+Qualquer membro aprovado, incluindo dirigentes e caminheiros sem cargo, pode registar empréstimos e devoluções. Apenas os cargos de material podem editar inventário ou reescrever/remover empréstimos. O servidor valida o stock e mantém o histórico de versões em cada gravação. Contas pendentes continuam sem permissão.
+
+O quadro de progresso agrupa os nomes pela etapa atual e permite filtrar a tabela. Sem etapa atribuída, a pessoa surge em Por registar; a aplicação não assume automaticamente Caminho.

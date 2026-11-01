@@ -30,6 +30,25 @@ begin
    base:=changed;r:=r+1;
   exception when raise_exception then if wanted_material or sqlerrm<>'FORBIDDEN_MATERIAL' then raise;end if;
   end;
+  -- Every approved member, including dirigentes and people without positions, can loan and return.
+  changed:=jsonb_set(jsonb_set(base,'{materials,0,borrowed}','1'),'{loans}','[{"id":"qa-loan","materialId":"qa-tent","person":"Responsável de teste","quantity":1,"due":"2026-11-12","returned":false}]');
+  perform public.save_clan_state(changed,r);base:=changed;r:=r+1;
+  changed:=jsonb_set(jsonb_set(base,'{materials,0,borrowed}','0'),'{loans,0,returned}','true');
+  perform public.save_clan_state(changed,r);base:=changed;r:=r+1;
+  if not wanted_material then
+   begin
+    perform public.save_clan_state(jsonb_set(base,'{materials,0,total}','2'),r);
+    raise exception 'Unexpected stock editing';
+   exception when raise_exception then if sqlerrm<>'FORBIDDEN_MATERIAL' then raise;end if;end;
+   begin
+    perform public.save_clan_state(jsonb_set(base,'{loans,0,person}','"Alteração indevida"'),r);
+    raise exception 'Unexpected loan rewriting';
+   exception when raise_exception then if sqlerrm<>'FORBIDDEN_LOANS' then raise;end if;end;
+   begin
+    perform public.save_clan_state(jsonb_set(base,'{loans}','[]'),r);
+    raise exception 'Unexpected loan deletion';
+   exception when raise_exception then if sqlerrm<>'FORBIDDEN_LOANS' then raise;end if;end;
+  end if;
   changed:=jsonb_set(base,'{movements}','[{"id":"qa-expense","description":"Despesa de teste","category":"Atividades","type":"expense","amount":2,"date":"2026-11-01"}]'::jsonb);
   begin
    perform public.save_clan_state(changed,r);
@@ -56,6 +75,13 @@ begin
   end;
   execute 'reset role';
  end loop;
+ update public.clan_members set role='pending' where user_id=actor;
+ execute 'set local role authenticated';
+ begin
+  perform public.save_clan_state(base,r);
+  raise exception 'Pending member saved data';
+ exception when raise_exception then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
+ execute 'reset role';
 end;$test$;
 rollback;
 select revision as preserved_revision, (select count(*) from public.clan_members where role='admin') as admins from public.clan_state where id=1;
