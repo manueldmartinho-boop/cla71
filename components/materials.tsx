@@ -1,9 +1,11 @@
 'use client';
+import {useRouter} from 'next/navigation';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {Bell,Check,Package,Plus,Search,Trash2,X,Pencil,RotateCcw} from 'lucide-react';
 import type {Data,Material,MaterialAlert} from '@/lib/data';
 
 export default function Materials({data,onSave,onEdit,onDelete,canWrite,initialMaterialId}:{data:Data;onSave:(d:Data)=>Promise<boolean>;onEdit:(m:Material)=>void;onDelete:(id:string)=>void;canWrite:boolean;initialMaterialId:string|null}){
+ const router=useRouter();
  const [query,setQuery]=useState('');const [filter,setFilter]=useState('Todas');
  const [selected,setSelected]=useState<string|null>(initialMaterialId);
  const [editing,setEditing]=useState<MaterialAlert|null|undefined>(undefined);
@@ -14,10 +16,11 @@ export default function Materials({data,onSave,onEdit,onDelete,canWrite,initialM
  const detailsRef=useRef<HTMLElement>(null);
  useEffect(()=>{if(selected)detailsRef.current?.scrollIntoView({behavior:'smooth',block:'start'});},[selected]);
  useEffect(()=>{if(deleting)confirmRef.current?.showModal();else confirmRef.current?.close();},[deleting]);
+ useEffect(()=>{setSelected(initialMaterialId);setEditing(undefined);},[initialMaterialId]);
  const material=data.materials.find(m=>m.id===selected);
  const list=data.materials.filter(m=>`${m.name} ${m.category} ${m.location}`.toLowerCase().includes(query.toLowerCase())&&(filter==='Todas'||(filter==='Com avisos'?m.alerts?.some(a=>!a.resolved):m.category===filter)));
  const pending=data.materials.flatMap(m=>m.alerts??[]).filter(a=>!a.resolved);
- function select(id:string){setSelected(id);setEditing(undefined);setError('');}
+ function select(id:string){router.push('/material/'+encodeURIComponent(id));setSelected(id);setEditing(undefined);setError('');}
  function open(alert:MaterialAlert|null){setEditing(alert);setKind(alert?.kind??'missing');setItems(alert?.items.length?alert.items.map(i=>({...i})):[{name:'',quantity:1}]);setError('');}
  async function saveAlerts(alerts:MaterialAlert[]){
   if(!material||!canWrite||busy)return false;

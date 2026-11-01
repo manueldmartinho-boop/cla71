@@ -17,15 +17,16 @@ d=clone();d.materials[0].total=0;assert.ok(isData(d),'Permite inventariar um art
 d=clone();d.treasury.people[0].tribeId='unknown';assert.equal(isData(d),false);
 d=clone();d.treasury.people.push({...person,id:'p2',email:'PESSOA@example.test'});assert.equal(isData(d),false);
 d=clone();d.treasury.people[0].positions=['fake'];assert.equal(isData(d),false);
-const ids=['material_keeper','guide','deputy_guide','treasurer'];
-for(let mask=0;mask<16;mask++){
+const ids=['material_keeper','guide','deputy_guide','treasurer','leader_viewer'];
+for(let mask=0;mask<32;mask++){
  const roles=ids.filter((_,i)=>mask&(1<<i));
  const p={...person,positions:roles};const perm=permissionsFor('member','PESSOA@example.test',[p]);
- assert.equal(perm.material,roles.some(r=>['material_keeper','guide','deputy_guide'].includes(r)));
- assert.equal(perm.finance,roles.some(r=>['treasurer','guide','deputy_guide'].includes(r)));
+ assert.equal(perm.material,!roles.includes('leader_viewer')&&roles.some(r=>['material_keeper','guide','deputy_guide'].includes(r)));
+ assert.equal(perm.finance,!roles.includes('leader_viewer')&&roles.some(r=>['treasurer','guide','deputy_guide'].includes(r)));
+ assert.equal(perm.progress,roles.includes('leader_viewer'));
  assert.equal(perm.admin,false);
 }
-assert.deepEqual(permissionsFor('member','other@example.test',[person]),{admin:false,material:false,finance:false});
-assert.deepEqual(permissionsFor('member',person.email,[{...person,active:false,positions:ids}]),{admin:false,material:false,finance:false});
-assert.deepEqual(permissionsFor('admin',person.email,[]),{admin:true,material:true,finance:true});
-console.log('Notificações, tribos e 16 combinações de cargos: OK');
+assert.deepEqual(permissionsFor('member','other@example.test',[person]),{admin:false,material:false,finance:false,progress:false});
+assert.deepEqual(permissionsFor('member',person.email,[{...person,active:false,positions:ids}]),{admin:false,material:false,finance:false,progress:false});
+assert.deepEqual(permissionsFor('admin',person.email,[]),{admin:true,material:true,finance:true,progress:true});
+console.log('Notificações, tribos e 32 combinações de cargos: OK');

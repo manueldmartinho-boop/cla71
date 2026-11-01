@@ -10,7 +10,7 @@ Aplicação em **Next.js 16, React e TypeScript**, com autenticação Supabase e
 - Prioridade por tipologia e proteção contra retiradas automáticas.
 - Simulação de um valor por pessoa: a aplicação divide a retirada entre os saldos disponíveis e apresenta as origens antes da confirmação.
 - Pessoas sem saldo elegível bloqueiam a confirmação. Pode-se ajustar as regras, creditar saldo ou desmarcar essas pessoas e recalcular.
-- Opção explícita de registar também a despesa total na caixa geral, evitando duplicar uma despesa já registada.
+- Caixa do Clã independente das contas individuais, sem movimentos gerais automáticos.
 - Histórico de movimentos individuais, arquivo de pessoas e cópias de segurança JSON.
 - Entrada, pedido de acesso, confirmação de email e recuperação de palavra-passe.
 
@@ -24,8 +24,9 @@ A área **Pessoas e tribos** centraliza os perfis, saldos individuais e cargos. 
 | Guarda-material | Gestão | Consulta |
 | Tesoureira | Consulta | Gestão |
 | Guia / Subguia | Gestão | Gestão |
+| Dirigente | Consulta | Consulta |
 
-Os cargos acumulam-se. Arquivar uma pessoa preserva saldos e histórico, retirando as permissões dos cargos. O administrador gere pessoas, tribos e aprovações. Contas pendentes não têm acesso aos dados. As regras são aplicadas na base de dados; um utilizador não consegue atribuir cargos a si próprio através do cliente.
+Os cargos acumulam-se. Dirigente prevalece sobre os outros cargos: consulta material e finanças, mas pode atualizar o progresso. Administradores mantêm gestão total. Arquivar uma pessoa preserva saldos e histórico, retirando as permissões dos cargos. O administrador gere pessoas, tribos e aprovações. Contas pendentes não têm acesso aos dados. As regras são aplicadas na base de dados; um utilizador não consegue atribuir cargos a si próprio através do cliente.
 
 ## Notificações de material
 
@@ -50,7 +51,7 @@ Preencher NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. A cha
 ## Preparar a base de dados
 
 1. Num projeto Supabase, aplicar por ordem os ficheiros em supabase/migrations.
-2. Configurar Authentication → URL Configuration: Site URL e Redirect URLs devem incluir o endereço final do site. Para desenvolvimento, adicionar http://localhost:3000.
+2. Configurar Authentication → URL Configuration: Site URL: https://cla71.vercel.app. Redirect URLs: https://cla71.vercel.app/recuperar-password. O modelo de recuperação deve usar {{ .ConfirmationURL }}.
 3. Em Authentication, manter a confirmação de email ativa. Configurar SMTP próprio se necessário para envio de emails a todos os membros; os limites do serviço de emails incluído dependem do plano Supabase.
 4. Para criar o primeiro administrador, executar no SQL Editor (substituir pelo email autorizado):
 
@@ -70,9 +71,9 @@ Adicionar as duas variáveis do .env.example às variáveis de ambiente do proje
 
 ## Concorrência e cópias de segurança
 
-As gravações são transações atómicas com bloqueio e revisão. Se duas pessoas editarem a mesma versão, a segunda gravação é rejeitada e a versão atual é carregada, para evitar sobrescrever dados de outro membro. Usar o botão Atualizar dados partilhados para carregar alterações antes de trabalhar.
+As gravações são transações atómicas com bloqueio e revisão. Se duas pessoas editarem a mesma versão, a segunda gravação é rejeitada e a versão atual é carregada, para evitar sobrescrever dados de outro membro. Atualizar a página carrega a versão partilhada mantendo o endereço atual.
 
-Cada conta individual tem um saldo por tipologia calculado em cêntimos inteiros. O servidor verifica a estrutura, relações, quantidades e saldos não negativos. A confirmação de uma retirada guarda os débitos individuais e a eventual despesa geral na mesma transação.
+Cada conta individual tem um saldo por tipologia calculado em cêntimos inteiros. O servidor verifica a estrutura, relações, quantidades e saldos não negativos. A confirmação de uma retirada guarda os débitos individuais na mesma transação.
 
 A interface permite exportar cópias de segurança. A importação e a demonstração foram retiradas. A pasta backups/ é privada e está excluída do Git.
 
@@ -87,3 +88,13 @@ pnpm build
 O teste cobre divisão entre tipologias, prioridades, fundos protegidos, pessoas arquivadas, simulação sem mutação e bloqueio de saldos negativos.
 
 As amostras existentes no código são usadas apenas nos testes; não são carregadas na aplicação.
+
+## Perfil, navegação e progresso
+
+Cada área tem endereço próprio: /material, /financas, /financas/individual, /pessoas, /progresso, /perfil e /definicoes. Atualizar ou usar o histórico do navegador mantém a área.
+
+No Perfil pode-se alterar a palavra-passe confirmando a atual e terminar sessão. O cabeçalho usa o logótipo fornecido.
+
+Progresso: quadro FACEIS e ficha por caminheiro, 42 objetivos de referência da IV secção, estados Não tem/Proposto/Em curso/Tem, etapa, observações e várias pendências com prazo e conclusão. Rótulos resumidos baseados no programa CNE e no cartaz de objetivos ligado na aplicação. Não atribui insígnias automaticamente. Dirigentes e administradores atualizam; restantes membros consultam.
+
+clan_progress_logs regista autor verificado pelo servidor, data e valores antes/depois na mesma transação. O cliente só pode ler os registos, nunca alterá-los. A migração aceita os dados antigos sem os substituir.

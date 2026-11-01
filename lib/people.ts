@@ -6,16 +6,18 @@ export const positions = [
  { id:'guide', label:'Guia' },
  { id:'deputy_guide', label:'Subguia' },
  { id:'treasurer', label:'Tesoureira' },
+ { id:'leader_viewer', label:'Dirigente' },
 ] as const;
 export type Position = typeof positions[number]['id'];
 export type Tribe = { id:string; name:string };
-export type Permissions = { material:boolean; finance:boolean; admin:boolean };
+export type Permissions = { material:boolean; finance:boolean; admin:boolean; progress:boolean };
 export function permissionsFor(role:string,email:string,people:Person[]):Permissions {
  const admin=role==='admin';
  const person=people.find(p=>p.active&&p.email?.trim().toLowerCase()===email.trim().toLowerCase());
  const roles=person?.positions??[];
+ if(!admin&&roles.includes('leader_viewer'))return {admin:false,material:false,finance:false,progress:true};
  const leader=roles.includes('guide')||roles.includes('deputy_guide');
- return {admin,material:admin||leader||roles.includes('material_keeper'),finance:admin||leader||roles.includes('treasurer')};
+ return {admin,progress:admin,material:admin||leader||roles.includes('material_keeper'),finance:admin||leader||roles.includes('treasurer')};
 }
 export function validateDirectory(data:Data):boolean {
  const tribes=data.tribes??[];

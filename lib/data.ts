@@ -1,10 +1,11 @@
 import { demoTreasury, validateTreasury, type Treasury } from './treasury';
 import { validateDirectory, type Tribe } from './people';
+import {validProgress,type Progress} from './progress';
 export type MaterialAlert = {id:string;kind:'missing'|'maintenance'|'note';description:string;items:{name:string;quantity:number}[];resolved:boolean;createdAt:string};
 export type Material = { id: string; name: string; category: string; total: number; borrowed: number; condition: string; location: string; alerts?:MaterialAlert[] };
 export type Movement = { id: string; description: string; category: string; type: 'income' | 'expense'; amount: number; date: string };
 export type Loan = { id: string; materialId: string; person: string; quantity: number; due: string; returned: boolean };
-export type Data = { version: 1; materials: Material[]; movements: Movement[]; loans: Loan[]; treasury?: Treasury; tribes?:Tribe[] };
+export type Data = { version: 1; materials: Material[]; movements: Movement[]; loans: Loan[]; treasury?: Treasury; tribes?:Tribe[]; progress?:Progress };
 export const emptyData: Data = { version: 1, materials: [], movements: [], loans: [] };
 export const demoData: Data = { version: 1, treasury:demoTreasury, materials: [
  {id:'m1',name:'Tenda de patrulha · 6 pessoas',category:'Campismo',total:4,borrowed:1,condition:'Bom',location:'Sede · Armário A'},
@@ -28,7 +29,7 @@ export const demoData: Data = { version: 1, treasury:demoTreasury, materials: [
 export function isData(value: unknown): value is Data {
  if(!value || typeof value !== 'object') return false;
  const d = value as Data;
- if(d.version !== 1 || !Array.isArray(d.materials) || !Array.isArray(d.movements) || !Array.isArray(d.loans) || (d.treasury!==undefined&&!validateTreasury(d.treasury)) || !validateDirectory(d)) return false;
+ if(d.version !== 1 || !Array.isArray(d.materials) || !Array.isArray(d.movements) || !Array.isArray(d.loans) || (d.treasury!==undefined&&!validateTreasury(d.treasury)) || !validateDirectory(d) || (d.progress!==undefined&&!validProgress(d.progress,(d.treasury?.people??[]).map(p=>p.id)))) return false;
  const str = (v: unknown) => typeof v === 'string' && v.length < 10000;
  const int = (v: number) => Number.isSafeInteger(v) && v >= 0;
  const date = (v: string) => str(v) && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
