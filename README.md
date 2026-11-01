@@ -105,7 +105,7 @@ As páginas do grupo app/(clan) partilham a mesma sessão e o mesmo estado em me
 
 Qualquer membro aprovado, incluindo dirigentes e caminheiros sem cargo, pode registar empréstimos e devoluções. Apenas os cargos de material podem editar inventário ou reescrever/remover empréstimos. O servidor valida o stock e mantém o histórico de versões em cada gravação. Contas pendentes continuam sem permissão.
 
-O quadro de progresso agrupa os nomes pela etapa atual e permite filtrar a tabela. Todos pertencem ao Caminho. Os grupos de etapas alcançadas são cumulativos e a tabela indica a etapa atual calculada.
+O quadro de progresso agrupa os nomes pela etapa atual e permite filtrar a tabela. Os cartões e a tabela mostram apenas a etapa atual calculada de cada caminheiro. Cada pessoa aparece num único cartão.
 
 ## Regras de progresso da IV secção
 
