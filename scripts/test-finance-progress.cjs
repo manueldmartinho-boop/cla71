@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
 require('./test-operations.cjs');
 const {personalEntry}=require('../lib/finance.ts');
-const {defaultCatalog,emptyProgress,validProgress}=require('../lib/progress.ts');
+const {defaultCatalog,emptyProgress,validProgress,progressSummary,trails,goalTrail,negotiatedGoals}=require('../lib/progress.ts');
 const {viewForPath,PASSWORD_RESET_URL}=require('../lib/routes.ts');
 const entry={id:'credit',personId:'p',typologyId:'a',cents:500,description:'Saldo',date:'2026-11-01',batchId:null};
 const data={version:1,materials:[],loans:[],movements:[{id:'m',description:'Caixa',category:'Outra',type:'income',amount:10,date:'2026-11-01'}],treasury:{people:[{id:'p',name:'Pessoa',active:true}],types:[{id:'t',name:'Individual'}],typologies:[{id:'a',typeId:'t',name:'Disponível',priority:1,spendable:true}],entries:[entry]}};
@@ -23,3 +23,33 @@ assert.equal(viewForPath('/progresso/p'),'progress');
 assert.equal(viewForPath('/material/tenda'),'materials');
 assert.equal(PASSWORD_RESET_URL,'https://cla71.vercel.app/recuperar-password');
 console.log('Separação financeira, progresso e endereços: OK');
+const committed={personId:'p',commitmentDate:'2026-10-01',departureDate:null,departureReason:''};
+const rec=g=>({personId:'p',goalId:g.id,status:'completed',stage:'comunidade',notes:'Validado',pending:[]});
+function withCount(n){return {...emptyProgress,milestones:[committed],records:defaultCatalog.filter(g=>Number(g.id.slice(1))<=n).map(rec)};}
+assert.equal(progressSummary(emptyProgress,'p').stage,'caminho');
+assert.equal(progressSummary({...emptyProgress,stages:[{personId:'p',stage:'partida'}]},'p').stage,'caminho','Ignora etapas manuais antigas');
+assert.equal(progressSummary(withCount(0),'p').stage,'comunidade');
+assert.equal(progressSummary(withCount(1),'p').stage,'comunidade');
+assert.equal(progressSummary(withCount(2),'p').stage,'servico');
+assert.equal(progressSummary(withCount(4),'p').stage,'servico');
+assert.equal(progressSummary(withCount(5),'p').stage,'partida');
+assert.equal(progressSummary(withCount(8),'p').merit,true);
+assert.equal(progressSummary(withCount(5),'p').merit,false);
+assert.equal(progressSummary({...withCount(8),milestones:[]},'p').stage,'caminho');
+for(const area of ['F','A','C','E','I','S']){
+ const d=withCount(8);d.records=d.records.filter(r=>!r.goalId.startsWith(area)||r.goalId===area+'1');
+ assert.equal(progressSummary(d,'p').stage,'comunidade','Exige todas as áreas');
+ const e=withCount(5);e.records.find(r=>r.goalId===area+'5').status='proposed';
+ assert.equal(progressSummary(e,'p').stage,'servico','Propostos não contam para Partida');
+}
+assert.equal(trails.length,18);
+for(const area of ['F','A','C','E','I','S'])assert.equal(trails.filter(t=>t.area===area).length,3);
+for(const goal of defaultCatalog)assert.ok(goalTrail(goal));
+assert.equal(new Set(trails.flatMap(t=>t.codes)).size,42);
+assert.equal(negotiatedGoals(withCount(2),'p','comunidade','F').length,2);
+assert.equal(negotiatedGoals(withCount(2),'p','servico','F').length,0);
+assert.equal(validProgress({...emptyProgress,milestones:[{...committed,commitmentDate:'2026-02-31'}]},['p']),false);
+assert.equal(validProgress({...emptyProgress,milestones:[committed,committed]},['p']),false);
+const custom={...withCount(1),catalog:[...defaultCatalog,{id:'custom',code:'F2',area:'F',title:'Extra',trailId:'F-1'}],records:[...withCount(1).records,{...rec({id:'custom'}),status:'completed'}]};
+assert.equal(progressSummary(custom,'p').counts[0].completed,1,'Objetivos extra não são OEF');
+console.log('Etapas automáticas, equilíbrio FACEIS, 18 trilhos e negociação: OK');

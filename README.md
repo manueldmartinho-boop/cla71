@@ -105,4 +105,16 @@ As páginas do grupo app/(clan) partilham a mesma sessão e o mesmo estado em me
 
 Qualquer membro aprovado, incluindo dirigentes e caminheiros sem cargo, pode registar empréstimos e devoluções. Apenas os cargos de material podem editar inventário ou reescrever/remover empréstimos. O servidor valida o stock e mantém o histórico de versões em cada gravação. Contas pendentes continuam sem permissão.
 
-O quadro de progresso agrupa os nomes pela etapa atual e permite filtrar a tabela. Sem etapa atribuída, a pessoa surge em Por registar; a aplicação não assume automaticamente Caminho.
+O quadro de progresso agrupa os nomes pela etapa atual e permite filtrar a tabela. Todos pertencem ao Caminho. Os grupos de etapas alcançadas são cumulativos e a tabela indica a etapa atual calculada.
+
+## Regras de progresso da IV secção
+
+Referência: [Manual do Dirigente — Sistema de Progresso](https://vianadocastelo.escutismo.pt/Documentos/formacao/Manual_do_Dirigente_Sistema_de_Progresso.pdf), páginas 7–15, e cartaz CNE dos OEF.
+
+A etapa é calculada: Caminho até registar o compromisso na IV secção; Comunidade após o compromisso; Serviço com pelo menos 2 OEF validados em cada uma das seis áreas; Partida com pelo menos 5 em cada área. Só o estado Tem conta como validado. Objetivos adicionais, oportunidades concluídas, propostas e etapas manuais antigas não alteram estes cálculos.
+
+A hierarquia apresenta as seis áreas, três trilhos por área e os OEF. Na ficha, cada objetivo pode integrar a negociação de Comunidade, Serviço ou Partida; o quadro da negociação mostra os escolhidos e validados por área, com referência de 2–3 por etapa. Propostas incluem oportunidades educativas, prazos e evidências. Objetivos reconhecidos na negociação podem ser validados diretamente.
+
+Completar oportunidades não valida objetivos automaticamente. A cerimónia de Partida fica num registo separado com data e fundamentação do Clã; não é atribuída por atingir o limiar da etapa. Todos os 42 OEF validados assinalam a conclusão do percurso para reconhecimento de mérito, sem simular a cerimónia.
+
+Os logs de progresso incluem compromisso, reconhecimento e etapa calculada antes/depois. Dados antigos, observações e pendências são mantidos; a aplicação não inventa datas de compromisso a partir das antigas etapas manuais.
