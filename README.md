@@ -6,8 +6,8 @@ Aplicação em **Next.js 16, React e TypeScript**, com autenticação Supabase e
 
 - Inventário, estado de conservação, localização, empréstimos e devoluções com controlo de stock.
 - Caixa geral: receitas, despesas, saldo, gráficos e exportação CSV.
-- Contas individuais: pessoas, tipos de dinheiro e tipologias criadas pela tesouraria.
-- Prioridade por tipologia e proteção contra retiradas automáticas.
+- Contas individuais: pessoas e tipos de dinheiro criados pela tesouraria.
+- Prioridade por tipo e proteção contra retiradas automáticas.
 - Simulação de um valor por pessoa: a aplicação divide a retirada entre os saldos disponíveis e apresenta as origens antes da confirmação.
 - Pessoas sem saldo elegível bloqueiam a confirmação. Pode-se ajustar as regras, creditar saldo ou desmarcar essas pessoas e recalcular.
 - Caixa do Clã independente das contas individuais, sem movimentos gerais automáticos.
@@ -73,7 +73,7 @@ Adicionar as duas variáveis do .env.example às variáveis de ambiente do proje
 
 As gravações são transações atómicas com bloqueio e revisão. Se duas pessoas editarem a mesma versão, a segunda gravação é rejeitada e a versão atual é carregada, para evitar sobrescrever dados de outro membro. Atualizar a página carrega a versão partilhada mantendo o endereço atual.
 
-Cada conta individual tem um saldo por tipologia calculado em cêntimos inteiros. O servidor verifica a estrutura, relações, quantidades e saldos não negativos. A confirmação de uma retirada guarda os débitos individuais na mesma transação.
+Cada conta individual apresenta um saldo por tipo de dinheiro, calculado em cêntimos inteiros. A estrutura interna mantém as referências antigas para preservar o histórico; os movimentos novos escolhem apenas o tipo. O servidor verifica a estrutura, relações, quantidades e saldos não negativos. A confirmação de uma retirada guarda os débitos individuais na mesma transação.
 
 A interface permite exportar cópias de segurança. A importação e a demonstração foram retiradas. A pasta backups/ é privada e está excluída do Git.
 
@@ -129,4 +129,6 @@ Nas finanças, os mesmos cargos e a Tesouraria consultam a caixa do Clã e todas
 
 get_clan_snapshot filtra o JSON no servidor e devolve apenas os dados autorizados, a etapa pública por pessoa e os metadados de acesso. A leitura direta de clan_state e do histórico integral é reservada ao administrador; os logs de progresso têm RLS por pessoa e cargo. O escritor público valida os campos visíveis e repõe os campos ocultos a partir da versão bloqueada antes de executar a gravação interna, mantendo os dados de outras pessoas. A resposta da gravação também é filtrada.
 
-Formulários de pessoas, tribos, tipologias, saldos, caixa e avisos abrem em janelas centradas. O login e o rodapé foram simplificados; avisos de material e conservação aparecem num único bloco sem repetição.
+Formulários de pessoas, tribos, tipos de dinheiro, saldos, caixa e avisos abrem em janelas centradas. O login e o rodapé foram simplificados; avisos de material e conservação aparecem num único bloco sem repetição.
+
+Os saldos podem ser ordenados alfabeticamente, do maior para o menor ou do menor para o maior, pelo total ou por um tipo específico. Pessoas arquivadas aparecem apenas com saldo não nulo, com indicação sob o nome. Crédito do Agrupamento usa um ícone de banco; os restantes tipos usam notas.
