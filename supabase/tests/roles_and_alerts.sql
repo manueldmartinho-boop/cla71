@@ -15,7 +15,7 @@ begin
   if (mask&4)>0 then role_names:=array_append(role_names,'deputy_guide');end if;
   if (mask&8)>0 then role_names:=array_append(role_names,'treasurer');end if;
   if (mask&16)>0 then role_names:=array_append(role_names,'leader_viewer');end if;
-  wanted_material:=(mask&16)=0 and (mask&7)>0;wanted_finance:=(mask&16)=0 and (mask&14)>0;
+  wanted_material:=(mask&16)=0 and (mask&7)>0;wanted_finance:=case when (mask&16)>0 then (mask&8)>0 else (mask&14)>0 end;
   base:=jsonb_build_object('version',1,'materials','[{"id":"qa-tent","name":"Tenda de teste","category":"Campismo","total":1,"borrowed":0,"condition":"Bom","location":"Teste"}]'::jsonb,'loans','[]'::jsonb,'movements','[]'::jsonb,'tribes','[{"id":"tribe","name":"Tribo de teste"}]'::jsonb,'treasury',jsonb_build_object('types','[]'::jsonb,'typologies','[]'::jsonb,'entries','[]'::jsonb,'people',jsonb_build_array(jsonb_build_object('id','qa-person','name','Pessoa de teste','email',actor_email,'active',true,'tribeId','tribe','positions',to_jsonb(role_names)))));
   update public.clan_state set payload=base where id=1;
   select revision into r from public.clan_state where id=1;

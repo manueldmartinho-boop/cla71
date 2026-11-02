@@ -21,7 +21,7 @@ export function permissionsFor(role:string,email:string,people:Person[]):Permiss
  const admin=role==='admin';
  const person=people.find(p=>p.active&&p.email?.trim().toLowerCase()===email.trim().toLowerCase());
  const roles=person?.positions??[];
- if(!admin&&roles.includes('leader_viewer'))return {admin:false,material:false,finance:false,progress:true};
+ if(!admin&&roles.includes('leader_viewer'))return {admin:false,material:false,finance:roles.includes('treasurer'),progress:true};
  const leader=roles.includes('guide')||roles.includes('deputy_guide');
  return {admin,progress:admin,material:admin||leader||roles.includes('material_keeper'),finance:admin||leader||roles.includes('treasurer')};
 }

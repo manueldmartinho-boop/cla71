@@ -22,7 +22,7 @@ for(let mask=0;mask<32;mask++){
  const roles=ids.filter((_,i)=>mask&(1<<i));
  const p={...person,positions:roles};const perm=permissionsFor('member','PESSOA@example.test',[p]);
  assert.equal(perm.material,!roles.includes('leader_viewer')&&roles.some(r=>['material_keeper','guide','deputy_guide'].includes(r)));
- assert.equal(perm.finance,!roles.includes('leader_viewer')&&roles.some(r=>['treasurer','guide','deputy_guide'].includes(r)));
+ assert.equal(perm.finance,roles.includes('leader_viewer')?roles.includes('treasurer'):roles.some(r=>['treasurer','guide','deputy_guide'].includes(r)));
  assert.equal(perm.progress,roles.includes('leader_viewer'));
  const view=visibilityFor('member',p.email,[p]);
  assert.equal(view.progressAll,roles.some(r=>['guide','deputy_guide','leader_viewer'].includes(r)));

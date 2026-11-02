@@ -24,9 +24,9 @@ A área **Pessoas e tribos** centraliza os perfis, saldos individuais e cargos. 
 | Guarda-material | Gestão | Consulta |
 | Tesouraria | Consulta | Gestão |
 | Guia / Subguia | Gestão | Gestão |
-| Dirigente | Consulta | Consulta |
+| Dirigente | Consulta | Consulta; gestão com o cargo Tesouraria |
 
-Os cargos acumulam-se. Dirigente prevalece sobre os outros cargos: consulta material e finanças, mas pode atualizar o progresso. Administradores mantêm gestão total. Arquivar uma pessoa preserva saldos e histórico, retirando as permissões dos cargos. O administrador gere pessoas, tribos e aprovações. Contas pendentes não têm acesso aos dados. As regras são aplicadas na base de dados; um utilizador não consegue atribuir cargos a si próprio através do cliente.
+Os cargos acumulam-se. Dirigente consulta material e pode atualizar o progresso. Ao acumular Tesouraria, pode também gerir finanças; sem esse cargo, apenas consulta finanças. Administradores mantêm gestão total. Arquivar uma pessoa preserva saldos e histórico, retirando as permissões dos cargos. O administrador gere pessoas, tribos e aprovações. Contas pendentes não têm acesso aos dados. As regras são aplicadas na base de dados; um utilizador não consegue atribuir cargos a si próprio através do cliente.
 
 ## Notificações de material
 
