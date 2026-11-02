@@ -12,6 +12,11 @@ export const demoTreasury: Treasury = {
  entries:[{id:'e1',personId:'ana',typologyId:'angariacoes',cents:150,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e2',personId:'ana',typologyId:'poupanca',cents:500,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e3',personId:'joao',typologyId:'angariacoes',cents:800,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e4',personId:'rita',typologyId:'angariacoes',cents:75,description:'Saldo de exemplo',date:'2026-11-01',batchId:null},{id:'e5',personId:'rita',typologyId:'reservado',cents:2000,description:'Saldo de exemplo',date:'2026-11-01',batchId:null}]
 };
 export const balance = (t: Treasury, personId: string, typologyId: string) => t.entries.filter(e => e.personId === personId && e.typologyId === typologyId).reduce((s,e) => s + e.cents, 0);
+export function financialPeople(t: Treasury): Person[] {
+ const totals = new Map<string, number>();
+ for (const entry of t.entries) totals.set(entry.personId, (totals.get(entry.personId) ?? 0) + entry.cents);
+ return t.people.filter(person => person.active || (totals.get(person.id) ?? 0) !== 0);
+}
 export function allocate(t: Treasury, personIds: string[], cents: number): Allocation[] {
  if (!Number.isSafeInteger(cents) || cents <= 0) throw Error('Indica um valor válido em cêntimos.');
  const order = [...t.typologies].filter(c => c.spendable).sort((a,b) => a.priority-b.priority || a.name.localeCompare(b.name,'pt') || a.id.localeCompare(b.id));

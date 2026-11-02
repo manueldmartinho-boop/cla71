@@ -5,7 +5,7 @@ import {personalEntry} from '@/lib/finance';
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, Check, Coins, Plus, Users, X } from 'lucide-react';
 import type { Data } from '@/lib/data';
-import { allocate, balance, emptyTreasury, type Allocation, type Entry, type Treasury, type Typology } from '@/lib/treasury';
+import { allocate, balance, emptyTreasury, financialPeople, type Allocation, type Entry, type Treasury, type Typology } from '@/lib/treasury';
 const euro=(c:number)=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(c/100);
 const today=()=>new Date().toLocaleDateString('sv-SE');
 type FormMode='type'|'typology'|'credit'|'expense'|null;
@@ -22,7 +22,7 @@ export default function TreasuryPanel({data,onSave,canWrite,personId}:{data:Data
  const [charge,setCharge]=useState(false);
  const [search,setSearch]=useState('');
  const active=t.people.filter(p=>p.active&&(!personId||p.id===personId));
- const visiblePeople=t.people.filter(p=>!personId||p.id===personId);
+ const visiblePeople=financialPeople(t).filter(p=>!personId||p.id===personId);
  const visibleEntries=t.entries.filter(e=>!personId||e.personId===personId);
  async function save(next:Treasury){setBusy(true);try{return await onSave({...data,treasury:next});}finally{setBusy(false);}}
  function open(mode:FormMode,typology:Typology|null=null){setForm(mode);setEdit(typology);setNotice('');}
@@ -60,7 +60,7 @@ export default function TreasuryPanel({data,onSave,canWrite,personId}:{data:Data
   }finally{setBusy(false);}
  }
  const total=visibleEntries.reduce((s,e)=>s+e.cents,0);
- return <div className="treasury-space"><div className="treasury-intro"><div><span className="eyebrow">CADA PESSOA, AS SUAS CONTAS</span><h2>{personId?visiblePeople[0]?.name:'Contas individuais'}</h2><p>Saldos separados por tipo e tipologia, com retiradas orientadas pelas regras da tesouraria.</p></div><div className="treasury-total"><small>Total dos saldos individuais</small><strong>{euro(total)}</strong></div></div>
+ return <div className="treasury-space"><div className="treasury-intro"><div><span className="eyebrow">CADA PESSOA, AS SUAS CONTAS</span><h2>{personId?t.people.find(p=>p.id===personId)?.name:'Contas individuais'}</h2><p>Saldos separados por tipo e tipologia, com retiradas orientadas pelas regras da tesouraria.</p></div><div className="treasury-total"><small>Total dos saldos individuais</small><strong>{euro(total)}</strong></div></div>
  <div className="treasury-toolbar"><div className="tabs"><button className={tab==='balances'?'active':''} onClick={()=>setTab('balances')}>Saldos</button><button className={tab==='rules'?'active':''} onClick={()=>setTab('rules')}>Tipos e tipologias</button><button className={tab==='history'?'active':''} onClick={()=>setTab('history')}>Histórico</button></div>{canWrite&&<div className="treasury-actions"><button className="button secondary" disabled={!active.length||!t.typologies.length} onClick={()=>open('credit')}><Plus size={15}/>Adicionar saldo</button><button className="button secondary" disabled={!active.length||!t.typologies.length} onClick={()=>open('expense')}><Plus size={15}/>Despesa individual</button><button className="button primary" disabled={!active.length||!t.typologies.some(c=>c.spendable)} onClick={()=>{setCharge(!charge);setProposal(null);setNotice('');}}><Coins size={16}/>Retirar a cada pessoa</button></div>}</div>
  {notice&&<div className="inline-notice" role="status">{notice}</div>}
  {!canWrite&&<div className="inline-notice">Os teus cargos permitem consultar os saldos e as regras.</div>}
