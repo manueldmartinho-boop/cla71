@@ -22,7 +22,7 @@ A área **Pessoas e tribos** centraliza os perfis, saldos individuais e cargos. 
 | --- | --- | --- |
 | Caminheiro sem cargo | Consulta | Consulta |
 | Guarda-material | Gestão | Consulta |
-| Tesoureira | Consulta | Gestão |
+| Tesouraria | Consulta | Gestão |
 | Guia / Subguia | Gestão | Gestão |
 | Dirigente | Consulta | Consulta |
 
@@ -120,3 +120,13 @@ Completar oportunidades não valida objetivos automaticamente. A cerimónia de P
 Os logs de progresso incluem compromisso, reconhecimento e etapa calculada antes/depois. Dados antigos, observações e pendências são mantidos; a aplicação não inventa datas de compromisso a partir das antigas etapas manuais.
 
 A edição de objetivos abre numa janela modal centrada, com scroll interno, suporte a Escape e mensagens de validação visíveis dentro da janela. Os separadores de ponto médio foram retirados da interface.
+
+## Visibilidade por pessoa
+
+Guias, subguias, dirigentes e administradores consultam o progresso detalhado de todo o Clã. Os restantes membros consultam apenas a própria ficha. As etapas atuais continuam visíveis para todos, sem objetivos, evidências ou pendências de outras pessoas. A escrita de progresso mantém-se reservada a dirigentes e administradores.
+
+Nas finanças, os mesmos cargos e a Tesouraria consultam a caixa do Clã e todas as contas individuais. Os restantes membros consultam apenas o próprio saldo e histórico. Os cargos de escrita financeira mantêm-se.
+
+get_clan_snapshot filtra o JSON no servidor e devolve apenas os dados autorizados, a etapa pública por pessoa e os metadados de acesso. A leitura direta de clan_state e do histórico integral é reservada ao administrador; os logs de progresso têm RLS por pessoa e cargo. O escritor público valida os campos visíveis e repõe os campos ocultos a partir da versão bloqueada antes de executar a gravação interna, mantendo os dados de outras pessoas. A resposta da gravação também é filtrada.
+
+Formulários de pessoas, tribos, tipologias, saldos, caixa e avisos abrem em janelas centradas. O login e o rodapé foram simplificados; avisos de material e conservação aparecem num único bloco sem repetição.

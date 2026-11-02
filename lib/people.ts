@@ -5,12 +5,18 @@ export const positions = [
  { id:'material_keeper', label:'Guarda-material' },
  { id:'guide', label:'Guia' },
  { id:'deputy_guide', label:'Subguia' },
- { id:'treasurer', label:'Tesoureira' },
+ { id:'treasurer', label:'Tesouraria' },
  { id:'leader_viewer', label:'Dirigente' },
 ] as const;
 export type Position = typeof positions[number]['id'];
 export type Tribe = { id:string; name:string };
 export type Permissions = { material:boolean; finance:boolean; admin:boolean; progress:boolean };
+export function visibilityFor(role:string,email:string,people:Person[]){
+ const person=people.find(p=>p.active&&p.email?.trim().toLowerCase()===email.trim().toLowerCase());
+ const approved=['admin','member','treasurer'].includes(role);
+ const progressAll=approved&&(role==='admin'||!!person?.positions?.some(p=>['guide','deputy_guide','leader_viewer'].includes(p)));
+ return {progressAll,financeAll:approved&&(progressAll||!!person?.positions?.includes('treasurer')),personId:approved?person?.id??null:null};
+}
 export function permissionsFor(role:string,email:string,people:Person[]):Permissions {
  const admin=role==='admin';
  const person=people.find(p=>p.active&&p.email?.trim().toLowerCase()===email.trim().toLowerCase());

@@ -5,7 +5,7 @@ export type MaterialAlert = {id:string;kind:'missing'|'maintenance'|'note';descr
 export type Material = { id: string; name: string; category: string; total: number; borrowed: number; condition: string; location: string; alerts?:MaterialAlert[] };
 export type Movement = { id: string; description: string; category: string; type: 'income' | 'expense'; amount: number; date: string };
 export type Loan = { id: string; materialId: string; person: string; quantity: number; due: string; returned: boolean };
-export type Data = { version: 1; materials: Material[]; movements: Movement[]; loans: Loan[]; treasury?: Treasury; tribes?:Tribe[]; progress?:Progress };
+export type Data = { version: 1; materials: Material[]; movements: Movement[]; loans: Loan[]; treasury?: Treasury; tribes?:Tribe[]; progress?:Progress; access?:{progressAll:boolean;financeAll:boolean;personId:string|null}; progressOverview?:{personId:string;stage:import('./progress').Stage}[] };
 export const emptyData: Data = { version: 1, materials: [], movements: [], loans: [] };
 export const demoData: Data = { version: 1, treasury:demoTreasury, materials: [
  {id:'m1',name:'Tenda de patrulha / 6 pessoas',category:'Campismo',total:4,borrowed:1,condition:'Bom',location:'Sede / Armário A'},
