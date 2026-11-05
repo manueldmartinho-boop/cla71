@@ -1,0 +1,3 @@
+[functions.register-clan]
+# Registration happens before a session exists; the function checks the admin-managed directory.
+verify_jwt = false

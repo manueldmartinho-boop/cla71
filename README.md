@@ -12,11 +12,11 @@ Aplicação em **Next.js 16, React e TypeScript**, com autenticação Supabase e
 - Pessoas sem saldo elegível bloqueiam a confirmação. Pode-se ajustar as regras, creditar saldo ou desmarcar essas pessoas e recalcular.
 - Caixa do Clã independente das contas individuais, sem movimentos gerais automáticos.
 - Histórico de movimentos individuais, arquivo de pessoas e cópias de segurança JSON.
-- Entrada, pedido de acesso, confirmação de email e recuperação de palavra-passe.
+- Entrada, criação imediata de conta para emails associados pelo administrador e recuperação de palavra-passe.
 
 ## Pessoas, tribos e permissões
 
-A área **Pessoas e tribos** centraliza os perfis, saldos individuais e cargos. Cada pessoa pode pertencer a uma tribo e acumular vários cargos. O email associa o perfil à conta de entrada, que continua a precisar de aprovação em Definições.
+A área **Pessoas e tribos** centraliza os perfis, saldos individuais e cargos. Cada pessoa pode pertencer a uma tribo e acumular vários cargos. O administrador associa o email ao perfil ativo. Ao criar conta com esse email, o membro fica ativo e entra imediatamente, sem confirmação por email nem segunda aprovação.
 
 | Cargo | Material e empréstimos | Finanças |
 | --- | --- | --- |
@@ -52,7 +52,7 @@ Preencher NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. A cha
 
 1. Num projeto Supabase, aplicar por ordem os ficheiros em supabase/migrations.
 2. Configurar Authentication → URL Configuration: Site URL: https://cla71.vercel.app. Redirect URLs: https://cla71.vercel.app/recuperar-password. O modelo de recuperação deve usar {{ .ConfirmationURL }}.
-3. Em Authentication, manter a confirmação de email ativa. Configurar SMTP próprio se necessário para envio de emails a todos os membros; os limites do serviço de emails incluído dependem do plano Supabase.
+3. Publicar a função `register-clan` com `verify_jwt = false`, conforme `supabase/config.toml`. A função verifica o email na lista gerida pelo administrador e usa as credenciais internas do Supabase para criar a conta já confirmada. Não colocar a chave de serviço na Vercel nem no cliente. O SMTP continua a ser usado para recuperação de palavras-passe.
 4. Para criar o primeiro administrador, executar no SQL Editor (substituir pelo email autorizado):
 
 ```sql
@@ -61,7 +61,7 @@ values (lower('EMAIL_DO_ADMINISTRADOR'))
 on conflict(email) do nothing;
 ```
 
-O convite é privado e é consumido quando a conta confirma o email e entra no site. As restantes contas começam pendentes. O primeiro administrador aprova-as em **Definições → Acessos ao Clã**.
+O convite é privado e é consumido quando a conta confirma o email e entra no site. Contas associadas a pessoas ativas recebem acesso de membro automaticamente. Emails não associados não podem criar conta pelo site; contas antigas sem associação mantêm o fluxo de aprovação anterior.
 
 ## Publicar na Vercel
 
@@ -132,3 +132,5 @@ get_clan_snapshot filtra o JSON no servidor e devolve apenas os dados autorizado
 Formulários de pessoas, tribos, tipos de dinheiro, saldos, caixa e avisos abrem em janelas centradas. O login e o rodapé foram simplificados; avisos de material e conservação aparecem num único bloco sem repetição.
 
 Os saldos podem ser ordenados alfabeticamente, do maior para o menor ou do menor para o maior, pelo total ou por um tipo específico. Pessoas arquivadas aparecem apenas com saldo não nulo, com indicação sob o nome. Crédito do Agrupamento usa um ícone de banco; os restantes tipos usam notas.
+
+O teste `supabase/tests/automatic_registration.sql` verifica a ativação por email autorizado, preservação de administradores, atribuição de cargos e bloqueio de emails não associados ou arquivados, revertendo os dados de teste.
