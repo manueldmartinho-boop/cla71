@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');
 require('./test-operations.cjs');
-const {personalEntry,personalTypeEntry}=require('../lib/finance.ts');
+const {personalEntry,personalTypeEntry,personalCredits,euroCents}=require('../lib/finance.ts');
 const {typeBalance,isBankType}=require('../lib/treasury.ts');
 const {defaultCatalog,emptyProgress,validProgress,progressSummary,trails,goalTrail,negotiatedGoals}=require('../lib/progress.ts');
 const {viewForPath,PASSWORD_RESET_URL}=require('../lib/routes.ts');
@@ -21,6 +21,19 @@ assert.equal(typeBalance(legacy.treasury,'p','t'),800,'Não altera o estado orig
 assert.throws(()=>personalTypeEntry(legacy,{id:'too-much',personId:'p',typeId:'t',cents:-801,description:'Excesso',date:'2026-11-02',batchId:null}));
 assert.equal(typeBalance(personalTypeEntry(data,{id:'type-credit',personId:'p',typeId:'t',cents:100,description:'Entrada por tipo',date:'2026-11-02',batchId:null}).treasury,'p','t'),600);
 assert.equal(isBankType('Crédito Agrupamento'),true);assert.equal(isBankType('Crédito do Agrupamento'),true);assert.equal(isBankType('Manjericos'),false);
+const batchData=structuredClone(data);batchData.treasury.people=Array.from({length:5},(_,i)=>({id:'person-'+i,name:'Pessoa '+i,active:true}));batchData.treasury.entries=[];
+const recipients=batchData.treasury.people.map((p,i)=>({personId:p.id,cents:i===4?200:100}));
+const batchInput={typeId:'t',date:'2026-11-06',description:'Angariação com exceção',recipients};
+const credits=personalCredits(batchData,batchInput);
+assert.deepEqual(credits.treasury.entries.map(e=>e.cents),[100,100,100,100,200]);
+assert.equal(credits.treasury.entries.reduce((s,e)=>s+e.cents,0),600,'Quatro pessoas a 1 euro e uma a 2 euros somam 6 euros');
+assert.equal(new Set(credits.treasury.entries.map(e=>e.id)).size,5);
+assert.equal(new Set(credits.treasury.entries.map(e=>e.batchId)).size,1);assert.ok(credits.treasury.entries[0].batchId);
+assert.deepEqual(credits.movements,batchData.movements);assert.equal(batchData.treasury.entries.length,0,'A preparação não altera o estado original');
+for(const invalid of [[],[recipients[0],recipients[0]],[{personId:'unknown',cents:100}],[{personId:'person-0',cents:0}],[{personId:'person-0',cents:-100}],[{personId:'person-0',cents:1.5}]])assert.throws(()=>personalCredits(batchData,{...batchInput,recipients:invalid}));
+const archived=structuredClone(batchData);archived.treasury.people[4].active=false;assert.throws(()=>personalCredits(archived,batchInput));assert.equal(archived.treasury.entries.length,0);
+assert.equal(euroCents('0.29'),29);assert.equal(euroCents('1,50'),150);assert.equal(euroCents('10000000'),1000000000);
+for(const invalid of ['', '0', '-1', '1.005', '1e2', '10000000.01'])assert.equal(euroCents(invalid),null);
 assert.equal(defaultCatalog.length,42);
 assert.deepEqual(['F','A','C','E','I','S'].map(a=>defaultCatalog.filter(g=>g.area===a).length),[6,6,8,8,7,7]);
 const p={...emptyProgress,records:[{personId:'p',goalId:'F1',status:'proposed',stage:'caminho',notes:'Preparar atividade',pending:[{id:'task',title:'Caminhada',dueDate:'2026-11-12',done:false}]}]};

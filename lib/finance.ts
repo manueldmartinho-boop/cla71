@@ -1,5 +1,20 @@
 import type {Data} from './data';
 import {balance,emptyTreasury,type Entry} from './treasury';
+export function euroCents(value:string):number|null {
+ if(!/^\d+(?:[.,]\d{1,2})?$/.test(value.trim()))return null;
+ const [whole,fraction='']=value.trim().replace(',','.').split('.');
+ const cents=Number(whole)*100+Number(fraction.padEnd(2,'0'));
+ return Number.isSafeInteger(cents)&&cents>0&&cents<=1_000_000_000?cents:null;
+}
+export function personalCredits(data:Data,input:{typeId:string;date:string;description:string;recipients:{personId:string;cents:number}[]}):Data {
+ const {recipients,...details}=input;
+ if(!recipients.length)throw Error('Seleciona pelo menos uma pessoa.');
+ if(new Set(recipients.map(r=>r.personId)).size!==recipients.length)throw Error('Uma pessoa só pode ser incluída uma vez.');
+ if(recipients.some(r=>!Number.isSafeInteger(r.cents)||r.cents<=0||r.cents>1_000_000_000))throw Error('Indica um valor positivo com até duas casas decimais para cada pessoa.');
+ if(recipients.some(r=>!data.treasury?.people.some(p=>p.id===r.personId&&p.active)))throw Error('Seleciona apenas pessoas ativas.');
+ const batchId=recipients.length>1?crypto.randomUUID():null;
+ return recipients.reduce((next,r)=>personalTypeEntry(next,{...details,...r,id:crypto.randomUUID(),batchId}),data);
+}
 export function personalTypeEntry(data:Data,entry:Omit<Entry,'typologyId'> & {typeId:string}):Data {
  const t=data.treasury??emptyTreasury;
  const sources=t.typologies.filter(c=>c.typeId===entry.typeId).sort((a,b)=>a.priority-b.priority||a.name.localeCompare(b.name,'pt')||a.id.localeCompare(b.id));

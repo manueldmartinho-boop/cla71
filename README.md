@@ -7,6 +7,7 @@ Aplicação em **Next.js 16, React e TypeScript**, com autenticação Supabase e
 - Inventário, estado de conservação, localização, empréstimos e devoluções com controlo de stock.
 - Caixa geral: receitas, despesas, saldo, gráficos e exportação CSV.
 - Contas individuais: pessoas e tipos de dinheiro criados pela tesouraria.
+- Adição de saldo a várias pessoas com valor comum, exceções individuais e total apresentado antes de guardar. Os movimentos são gravados juntos e identificados como adição coletiva no histórico.
 - Prioridade por tipo e proteção contra retiradas automáticas.
 - Simulação de um valor por pessoa: a aplicação divide a retirada entre os saldos disponíveis e apresenta as origens antes da confirmação.
 - Pessoas sem saldo elegível bloqueiam a confirmação. Pode-se ajustar as regras, creditar saldo ou desmarcar essas pessoas e recalcular.
